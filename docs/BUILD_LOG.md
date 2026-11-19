@@ -114,3 +114,28 @@ island is removed automatically.
 
 **Note:** the routing is automatic and functional, but not hand-polished. Open it in KiCad and tidy
 traces if you want a neater look. The DRC rules travel with the project.
+
+## Step 4: Silkscreen labels and doodle
+
+`gen/silk.py` adds:
+
+* **Pin labels** on every connector:
+  * J3 UART: GND, TX, RX, EN, IO0, 3V3
+  * J4 expansion: VIN, 3V3, GND, SDA, SCL, 18, 19, 23, 25, 26, 32, 33, 34, 35
+  * J2: 5V IN, GND
+* **Function labels:** RESET, BOOT, USER IO13, PWR and IO2 LEDs, IR TX ×2, IR RX 38 kHz, USB-C, board name.
+* **Reference designators:** each one tries several spots and takes the one that clears pads, other labels
+  and the board edge.
+* **Back side:**
+  * Big title and a revision line.
+  * A **GPIO map** and a **passives value table** (which value goes on which R/C), so hand-soldering
+    needs no laptop.
+  * An original doodle: a robot beaming IR.
+* **Text size:** all text is at least 0.8 mm high with 0.15 mm stroke, which budget fabs can print.
+
+| Top | Back (as you hold it) |
+|---|---|
+| ![top silk](img/v2_top_silk.png) | ![back](img/v2_bottom_view.png) |
+
+DRC after this step: still 0 electrical errors. Four warnings remain for labels close to the board edge
+(the J4 pin numbers); they are intentional and print fine.
