@@ -61,3 +61,56 @@ flowchart LR
 | User button | IO13 | | Boot / reset | IO0 / EN |
 
 \* IO34 and IO35 are input-only.
+
+## Step 3: PCB placement, routing and ground pours
+
+**Board:** 76 × 56 mm, 2 layers, 1.6 mm thick, four M2 holes at the corners.
+
+**Placement** (`gen/placement.py`). The parts are grouped by function:
+
+* ESP32 at the top centre, with the antenna hanging ≈5.5 mm past the board edge.
+* Power and USB on the left.
+* IR transmit and receive on the right edge, facing out.
+* Buttons in a row under the module.
+* Headers along the bottom edge.
+
+![placement](img/v2_placement.png)
+
+**Routing** (`gen/router.py`). Freerouting couldn't be run in the build sandbox, so the board uses a
+purpose-written 2-layer maze router:
+
+* Each net is a cost grid at 0.05 mm with three planes: F.Cu, vias and B.Cu.
+* scikit-image's minimum-cost-path solver connects each pad to the net's tree, nearest pad first.
+* Failed nets are ripped up and retried first on the next pass.
+* Paths are then straightened by string-pulling, and stubs are cleaned up.
+
+Track widths:
+
+| Nets | Width |
+|---|---|
+| VIN, +3V3, GND, IR LED | 0.5 mm |
+| VBUS | 0.3 mm |
+| Signals | 0.25 mm |
+| USB D+/D− and CC (0.5 mm-pitch USB-C pins) | 0.15 mm |
+
+Other routing rules:
+
+* No top-layer tracks under the ESP32 body.
+* No copper under the 1 mm of antenna that sits over the board.
+
+**Pours.** There is a GND pour on both layers, with ≈110 stitching vias. Any via that lands on an isolated
+island is removed automatically.
+
+| Top (F.Cu + silk) | Bottom (B.Cu) |
+|---|---|
+| ![top](img/v2_routed_top.png) | ![bottom](img/v2_routed_bottom.png) |
+
+**DRC** (KiCad 7 `pcbnew` engine, `gen/drc.py`)
+
+* 0 clearance errors, 0 hole-clearance errors, 0 unconnected items, 0 dangling tracks or vias.
+* What remains is silkscreen cosmetics (cleaned up in step 4). There is also a "library not in configuration"
+  notice, which only means the build machine had no global footprint library table.
+* `hardware/esp_ir_board.kicad_dru` allows one thermal spoke on GND pins hemmed in by tracks.
+
+**Note:** the routing is automatic and functional, but not hand-polished. Open it in KiCad and tidy
+traces if you want a neater look. The DRC rules travel with the project.
