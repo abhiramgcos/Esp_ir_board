@@ -139,3 +139,20 @@ traces if you want a neater look. The DRC rules travel with the project.
 
 DRC after this step: still 0 electrical errors. Four warnings remain for labels close to the board edge
 (the J4 pin numbers); they are intentional and print fine.
+
+## Step 5: Fab outputs, BOM and final verification
+
+* **Gerbers and drills:** `fab/gerbers/` plus `fab/esp_ir_board_v2_gerbers.zip`, ready to upload.
+* **BOMs:**
+  * `fab/BOM_full.csv`: every part, with MPN and LCSC, and whether it's SMT or hand-soldered.
+  * `fab/BOM_JLCPCB.csv` + `fab/CPL_JLCPCB.csv`: SMD parts only (through-hole parts are hand-soldered).
+  * Mounting holes are excluded.
+* **PDFs:** `hardware/docs/esp_ir_board_schematic.pdf` and `hardware/docs/assembly_top.pdf`.
+* **Independent check:** the same Gerber tool used on v1 was run on the v2 Gerbers:
+
+```
+nets: 41  shorts: 0  opens: 0
+schematic pins checked: 162  mismatches: 0
+```
+
+So the copper that gets manufactured matches the schematic, pin for pin.

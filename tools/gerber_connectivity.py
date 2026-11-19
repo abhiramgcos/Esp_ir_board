@@ -1,67 +1,75 @@
-import re,collections,numpy as np
+"""Independent Gerber check: rebuild the netlist from KiCad X2 net attributes, render both copper layers,
+join them through plated holes, and report opens/shorts. Optionally compare with gen/circuit.py.
+Usage: python3 tools/gerber_connectivity.py <gerber_dir> [--circuit gen]"""
+import re, sys, glob, os, collections
+import numpy as np
 from PIL import Image
 from scipy import ndimage
-D=40
-bounds={'F':('board-F_Cu.gtl',96.95,-100.8),'B':('board-B_Cu.gbl',95.3755,-100.3755)}
-X0,Y0=94.0,-99.0; W,H=int(62*D),int(41*D)
-lab={};
-for s,(f,mx,my) in bounds.items():
-    a=np.array(Image.open(f+'.png'))[:,:,3]>127
-    c=np.zeros((H,W),bool)
-    ox=round((mx-X0)*D); oy=round((Y0-my)*D)
-    c[oy:oy+a.shape[0],ox:ox+a.shape[1]]=a
-    l,n=ndimage.label(c); lab[s]=(l,n); print(s,'islands',n)
-def px(x,y): return int(round((Y0-y)*D)), int(round((x-X0)*D))
-# union-find over (side,label)
-par={}
+from pygerber.gerberx3.api.v2 import GerberFile, ColorScheme, PixelFormatEnum
+
+D = 40  # px per mm
+d = sys.argv[1]
+fcu = glob.glob(os.path.join(d, '*F_Cu.gtl'))[0]; bcu = glob.glob(os.path.join(d, '*B_Cu.gbl'))[0]
+pth = glob.glob(os.path.join(d, '*PTH.drl')); pth = [p for p in pth if 'NPTH' not in p][0]
+
+def flashes(f):
+    at, out = {}, []
+    for line in open(f):
+        line = line.strip()
+        m = re.match(r'(?:G04 #@! |%)TO\.(\w),(.*?)\*%?$', line)
+        if m: at[m[1]] = m[2]; continue
+        if 'TD' in line and line.startswith(('G04 #@! TD', '%TD')): at = {}; continue
+        m = re.match(r'X(-?\d+)Y(-?\d+)D03\*', line)
+        if m and at.get('N'):
+            out.append((at['N'], at.get('P', 'via'), int(m[1]) / 1e6, int(m[2]) / 1e6))
+    return out
+
+layers, info = {}, {}
+for s, f in (('F', fcu), ('B', bcu)):
+    p = GerberFile.from_file(f).parse(); i = p.get_info()
+    png = f'/tmp/_{s}.png'
+    p.render_raster(png, dpmm=D, color_scheme=ColorScheme.COPPER_ALPHA, pixel_format=PixelFormatEnum.RGBA)
+    layers[s] = (np.array(Image.open(png))[:, :, 3] > 127, float(i.min_x_mm), float(i.max_y_mm))
+X0 = min(v[1] for v in layers.values()) - 1; Y0 = max(v[2] for v in layers.values()) + 1
+H = max(v[0].shape[0] for v in layers.values()) + 4 * D; W = max(v[0].shape[1] for v in layers.values()) + 4 * D
+lab = {}
+for s, (a, mx, my) in layers.items():
+    c = np.zeros((H, W), bool); ox = round((mx - X0) * D); oy = round((Y0 - my) * D)
+    c[oy:oy + a.shape[0], ox:ox + a.shape[1]] = a
+    lab[s] = ndimage.label(c)[0]
+px = lambda x, y: (int(round((Y0 - y) * D)), int(round((x - X0) * D)))
+def comp(s, x, y):
+    r, c = px(x, y); v = lab[s][r, c]
+    if v == 0:
+        w = lab[s][r - 3:r + 4, c - 3:c + 4]; nz = w[w > 0]; v = nz[0] if len(nz) else 0
+    return (s, int(v))
+par = {}
 def find(a):
-    par.setdefault(a,a)
-    while par[a]!=a: par[a]=par[par[a]]; a=par[a]
+    par.setdefault(a, a)
+    while par[a] != a: par[a] = par[par[a]]; a = par[a]
     return a
-def uni(a,b): par[find(a)]=find(b)
-def comp(s,x,y):
-    r,c=px(x,y); v=lab[s][0][r,c]
-    if v==0:
-        # search small neighborhood
-        w=lab[s][0][r-3:r+4,c-3:c+4]; nz=w[w>0]
-        v=nz[0] if len(nz) else 0
-    return (s,v)
-holes=[]
-for f in ['board-PTH.drl']:
-    t=None
-    for line in open(f):
-        m=re.match(r'X(-?[\d.]+)Y(-?[\d.]+)',line)
-        if m: holes.append((float(m[1]),float(m[2])))
-for x,y in holes:
-    a,b=comp('F',x,y),comp('B',x,y)
-    if a[1] and b[1]: uni(a,b)
-# flashes with nets
-items=[]
-for f,s in [('board-F_Cu.gtl','F'),('board-B_Cu.gbl','B')]:
-    at={}
-    for line in open(f):
-        line=line.strip()
-        m=re.match(r'G04 #@! TO\.(\w),(.*)\*$',line)
-        if m: at[m[1]]=m[2];continue
-        if line.startswith('G04 #@! TD'): at={};continue
-        m=re.match(r'X(-?\d+)Y(-?\d+)D03\*',line)
-        if m and 'N' in at and at['N']:
-            x,y=int(m[1])/1e6,int(m[2])/1e6
-            items.append((at['N'],at.get('P','via'),s,x,y))
-netcomps=collections.defaultdict(set); compnets=collections.defaultdict(set)
-for n,p,s,x,y in items:
-    c=comp(s,x,y)
-    if not c[1]: print('NO COPPER at',n,p,s,x,y); continue
-    r=find(c); netcomps[n].add((r,p)); compnets[r].add(n)
-print('--- shorts')
-for r,ns in compnets.items():
-    if len(ns)>1: print(r,ns)
-print('--- opens')
-for n,cs in netcomps.items():
-    roots=collections.defaultdict(list)
-    for r,p in cs: roots[r].append(p)
-    if len(roots)>1 and not n.startswith('unconnected'):
-        print(n); [print('   ',sorted(set(v))) for v in roots.values()]
-print('nets',len([n for n in netcomps if not n.startswith('unconnected')]),'distinct roots used',len(compnets))
-# sanity: deliberately probe a point between U1 pins (should be no copper / different)
-print(comp('F',116.25,-101.885), comp('F',116.25,-101.25), comp('F',116.25,-102.52))
+for line in open(pth):
+    m = re.match(r'X(-?[\d.]+)Y(-?[\d.]+)', line)
+    if m:
+        a, b = comp('F', float(m[1]), float(m[2])), comp('B', float(m[1]), float(m[2]))
+        if a[1] and b[1]: par[find(a)] = find(b)
+netcomps = collections.defaultdict(lambda: collections.defaultdict(list)); compnets = collections.defaultdict(set)
+pins = {}
+for s, f in (('F', fcu), ('B', bcu)):
+    for n, p, x, y in flashes(f):
+        c = comp(s, x, y)
+        if not c[1]: continue
+        r = find(c); netcomps[n][r].append(p); compnets[r].add(n)
+        if p != 'via': pins[tuple(p.split(',')[:2])] = n
+shorts = {r: ns for r, ns in compnets.items() if len(ns) > 1}
+opens = {n: cs for n, cs in netcomps.items() if len(cs) > 1 and not n.startswith('unconnected') and n != 'N/C'}
+nets = [n for n in netcomps if not n.startswith('unconnected') and n != 'N/C']
+print(f'nets: {len(nets)}  shorts: {len(shorts)}  opens: {len(opens)}')
+for r, ns in shorts.items(): print('  SHORT', ns)
+for n, cs in opens.items(): print('  OPEN', n, [sorted(set(v))[:6] for v in cs.values()])
+if '--circuit' in sys.argv:
+    sys.path.insert(0, sys.argv[sys.argv.index('--circuit') + 1]); from circuit import comps
+    want = {(c['ref'], p): n for c in comps for p, n in c['pins'].items()}
+    bad = [(k, n, pins.get(k)) for k, n in want.items() if pins.get(k) != n]
+    print(f'schematic pins checked: {len(want)}  mismatches: {len(bad)}')
+    for b in bad[:20]: print('  MISMATCH', b)
