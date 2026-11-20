@@ -11,6 +11,8 @@
 | `scripts/esp.sh 3d` | `make 3d` | Opens the PCB editor (View → 3D Viewer, Alt+3). On KiCad 9+ it also renders 3D PNGs to `build/render/` |
 | `scripts/esp.sh gerbers` | `make gerbers` | Shows `fab/gerbers` in gerbv, the way the fab will see them |
 | `scripts/esp.sh render` | `make render` | Writes schematic, top, bottom-copper and back-silk PNGs to `build/render/` |
+| `scripts/copper_views.sh` | `make copper` | Copper layout images on KiCad's dark background: both layers overlaid without pours (`docs/img/v2.1_routing.png`), plus top and bottom copper with pours |
+| `scripts/silk_preview.sh <pcb> <dir>` | | Front/back silkscreen + copper PNGs for checking label placement |
 | `scripts/esp.sh check` | `make check` | Runs the netlist-vs-design ERC, KiCad ERC/DRC (KiCad 8+, else the pcbnew DRC) and the independent Gerber connectivity check, then prints PASS/FAIL |
 | `scripts/esp.sh bom` | `make bom` | Prints `fab/BOM_full.csv` as a table |
 | `scripts/esp.sh fab` | `make fab` | Regenerates Gerbers, drills, BOMs, the JLC CPL, the Gerber zip and the PDFs |

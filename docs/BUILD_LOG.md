@@ -210,6 +210,15 @@ Result: **no silk on pads and no silk overlaps**. Previews come from `scripts/si
 |---|---|
 | ![v2.0](img/v2.0_3d_top_iso.png) | ![v2.1](img/v2.1_3d_top_iso.png) |
 
+### 6d-2. Copper layout views
+`scripts/copper_views.sh` (`make copper`) renders the copper in KiCad's colours on the editor background.
+
+![v2.1 routing](img/v2.1_routing.png)
+
+| Top copper | Bottom copper (from below) |
+|---|---|
+| ![F.Cu](img/v2.1_copper_top.png) | ![B.Cu](img/v2.1_copper_bottom.png) |
+
 ### 6e. Firmware and guides
 * `firmware/`: PlatformIO project (IRremoteESP8266 2.8.6, ArduinoJson 7.2.1, WiFiManager 2.0.17).
   * Learn / store / send, web UI, REST API, button actions, serial console, OTA.

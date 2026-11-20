@@ -45,6 +45,24 @@ real IR LEDs (TSAL6200) are clear, not red.</sub>
 |---|---|
 | ![top](docs/img/v2.1_3d_top.png) | ![bottom](docs/img/v2.1_3d_bottom_iso.png) |
 
+### Copper layout
+
+Two-layer board: signals on both sides, solid GND pour on both layers with via stitching, and a copper-free
+strip under the ESP32 antenna. Colours follow KiCad: **red = top copper (F.Cu)**, **blue = bottom copper
+(B.Cu)**, white = drills and vias.
+
+![Routing, both layers](docs/img/v2.1_routing.png)
+
+<sub>Both copper layers overlaid with the ground pours hidden, so every trace and via is visible. Power nets
+(VIN, 3V3, IR LED loop) use 0.5 mm tracks; signals use 0.25 mm; USB D+/D− and CC use 0.15 mm at the
+connector.</sub>
+
+| Top copper (F.Cu) | Bottom copper (B.Cu, viewed from below) |
+|---|---|
+| ![F.Cu](docs/img/v2.1_copper_top.png) | ![B.Cu](docs/img/v2.1_copper_bottom.png) |
+
+Regenerate with `make copper`.
+
 ## Getting started
 
 | Step | What to do | Guide |
@@ -127,7 +145,7 @@ v1/          Original v1 fab files (reference only)
 git clone https://github.com/abhiramgcos/Esp_ir_board.git && cd Esp_ir_board
 ./setup/install.sh            # KiCad 9, gerbv, librsvg, Python venv with pcbnew (asks for sudo once)
 source .venv/bin/activate
-make help                     # open | sch | pcb | 3d | gerbers | render | check | bom | fab | rebuild
+make help                     # open | sch | pcb | 3d | copper | gerbers | render | check | bom | fab | rebuild
 ```
 
 Details: [setup/README.md](setup/README.md), [scripts/README.md](scripts/README.md).
