@@ -92,7 +92,7 @@ import re, tempfile
 for it in range(4):
     pcbnew.ZONE_FILLER(b).Fill(b.Zones())
     rpt = tempfile.mktemp(suffix='.rpt')
-    pcbnew.WriteDRCReport(b, rpt, pcbnew.EDA_UNITS_MILLIMETRES, False)
+    pcbnew.WriteDRCReport(b, rpt, getattr(pcbnew, 'EDA_UNITS_MILLIMETRES', getattr(pcbnew, 'EDA_UNITS_MM', None)), False)
     bad = set()
     for blk in re.findall(r'\[(?:via_dangling|unconnected_items)\][^\n]*\n(?:\s+[^\n]*\n?)+', open(rpt).read()):
         for x, y in re.findall(r'Via \[GND\][^@]*?@\(([\d.]+) mm, ([\d.]+) mm\)|@\(([\d.]+) mm, ([\d.]+) mm\): Via \[GND\]', blk) and \

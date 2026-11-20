@@ -50,7 +50,12 @@ for c in comps:
     fp.SetOrientationDegrees(r)
     for k, v in (('MPN', c['mpn']), ('LCSC', c['lcsc'])):
         if v:
-            fp.SetProperty(k, v)
+            if hasattr(fp, 'SetProperty'):          # KiCad 7
+                fp.SetProperty(k, v)
+            else:                                   # KiCad 8+: hidden footprint field
+                f = pcbnew.PCB_FIELD(fp, fp.GetNextFieldId(), k)
+                f.SetText(v); f.SetVisible(False); f.SetLayer(pcbnew.F_Fab)
+                fp.AddField(f)
     if c['lib'].startswith('Mechanical'):
         fp.SetAttributes(fp.GetAttributes() | pcbnew.FP_EXCLUDE_FROM_BOM | pcbnew.FP_EXCLUDE_FROM_POS_FILES)
     for pad in fp.Pads():
