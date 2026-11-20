@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 # Factory image published on GitHub Releases (esp32-ir-blaster-esphome_*.factory.bin).
 # Contains no Wi-Fi credentials: on first boot the board opens the "ESP32 IR Blaster" hotspot (captive portal),
 # or you can set Wi-Fi over USB with Improv. Home Assistant then discovers it and offers "Adopt", which

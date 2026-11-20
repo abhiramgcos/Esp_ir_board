@@ -99,6 +99,27 @@ arc((x0 + rc, y1 - rc), (x0 + rc, y1), 90); arc((x0 + rc, y0 + rc), (x0, y0 + rc
 
 pcbnew.SaveBoard(OUT, board)
 
+# Physical stackup: 1.6 mm FR-4, black solder mask, white silkscreen (used by renders and the fab notes)
+STACKUP = '''		(stackup
+			(layer "F.SilkS" (type "Top Silk Screen") (color "White"))
+			(layer "F.Paste" (type "Top Solder Paste"))
+			(layer "F.Mask" (type "Top Solder Mask") (color "Black") (thickness 0.01))
+			(layer "F.Cu" (type "copper") (thickness 0.035))
+			(layer "dielectric 1" (type "core") (thickness 1.51) (material "FR4") (epsilon_r 4.5) (loss_tangent 0.02))
+			(layer "B.Cu" (type "copper") (thickness 0.035))
+			(layer "B.Mask" (type "Bottom Solder Mask") (color "Black") (thickness 0.01))
+			(layer "B.Paste" (type "Bottom Solder Paste"))
+			(layer "B.SilkS" (type "Bottom Silk Screen") (color "White"))
+			(copper_finish "HAL lead-free")
+			(dielectric_constraints no)
+		)
+'''
+def add_stackup(path):
+    t = open(path).read()
+    if '(stackup' not in t:
+        open(path, 'w').write(t.replace('\t(setup\n', '\t(setup\n' + STACKUP, 1))
+add_stackup(OUT)
+
 # design rules + net classes live in the project file
 pro = os.path.splitext(OUT)[0] + '.kicad_pro'
 pj = json.load(open(pro)) if os.path.exists(pro) else {}

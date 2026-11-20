@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Single-page web UI served at "/". Plain HTML + JS, no external files (works without internet).
 #pragma once
 #include <pgmspace.h>

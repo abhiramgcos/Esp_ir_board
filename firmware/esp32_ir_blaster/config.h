@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Pin map of the ESP32 IR board (v2.0 / v2.1). Matches gen/circuit.py and the GPIO map on the PCB back.
 #pragma once
 

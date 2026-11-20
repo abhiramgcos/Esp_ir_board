@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 # ESP32 IR Blaster - ESPHome hardware package (board v2.0 / v2.1)
 #
 # Defines the board: pins, IR transmitter/receiver, button, LED, I2C, diagnostics and Home Assistant actions.

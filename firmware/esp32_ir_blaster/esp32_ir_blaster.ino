@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ESP32 IR Blaster / Receiver - firmware for the ESP32 IR board (v2.x)
 //
 //  * Learns IR codes from any remote (decoded protocols like NEC/Sony/RC5/Samsung/AC units, or raw timings)

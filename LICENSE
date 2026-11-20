@@ -1,0 +1,30 @@
+ESP32 IR Blaster
+Copyright (c) 2026 abhiramgcos
+Source location: https://github.com/abhiramgcos/Esp_ir_board
+
+This repository is dual-licensed by content type.
+
+Hardware design: CERN Open Hardware Licence Version 2 - Permissive (CERN-OHL-P-2.0)
+  hardware/   KiCad schematic, PCB, design rules and PDFs
+  fab/        Gerbers, drill files, BOM and pick-and-place files
+  v1/         original v1 fabrication files
+  docs/       guides and board images
+  Full text: LICENSES/CERN-OHL-P-2.0.txt
+
+Software: MIT License (MIT)
+  firmware/   ESP32 firmware (Arduino / PlatformIO)
+  esphome/    ESPHome configuration
+  gen/        board generators (schematic, placement, router, silkscreen, BOM)
+  tools/      Gerber connectivity checker, 3D renderer
+  scripts/    helper scripts and Makefile targets
+  setup/      toolchain installer
+  Full text: LICENSES/MIT.txt
+
+Third-party libraries used by the firmware keep their own licenses
+(IRremoteESP8266: LGPL-2.1, ArduinoJson: MIT, WiFiManager: MIT,
+Arduino-ESP32 core: LGPL-2.1). KiCad library footprints and 3D models are
+used under the KiCad libraries license (CC-BY-SA 4.0 with exception).
+
+Both licenses are permissive: you may use, modify, manufacture and sell
+boards and derived designs, including commercially, as long as you keep
+the copyright and licence notices. There is no warranty.

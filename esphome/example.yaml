@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 # Your own ESPHome config for the ESP32 IR Blaster. Copy this file into Home Assistant's ESPHome folder
 # (or the ESPHome dashboard: New device -> skip -> Edit, then paste), then change the lines marked  # <- EDIT
 #

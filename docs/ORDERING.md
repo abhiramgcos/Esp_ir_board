@@ -12,6 +12,10 @@ Everything a fab needs is in [`fab/`](../fab), produced by `make fab` and verifi
 
 **Board facts** (fabs ask for these):
 
+The board is designed for **black solder mask with white silkscreen**, as in the renders. Black looks best,
+but it makes traces harder to follow when you're debugging. Green is fine if you prefer that.
+
+
 | Property | Value |
 |---|---|
 | Size | 68 × 48 mm |
@@ -34,7 +38,11 @@ These all fit the cheapest standard process at both fabs.
 
 1. Go to <https://jlcpcb.com>, sign in, and click **Order now** → **Add gerber file**. Upload
    `fab/esp_ir_board_v2_gerbers.zip`.
-2. Wait for the auto-detection and the preview. It should show **Layers 2, Dimension 68 × 48 mm**.
+2. Wait for the auto-detection and the preview. It should say *"Detected 2 layer board of 48×68mm"*.
+   * **The Dimensions boxes should read 68 × 48 (or 48 × 68).** If PCB Assembly is switched on with
+     **Standard** PCBA, JLC changes them to **78 × 70**: Standard assembly needs every side ≥ 70 mm, so JLC
+     adds edge rails. That's expected and harmless; you snap the rails off afterwards. With assembly off, or
+     with Economic PCBA, it stays 68 × 48.
    * Click **Gerber Viewer** and check both sides look like the images in the README.
    * The ESP32 antenna area at the top edge is empty copper on purpose.
 3. Settings: leave the defaults except where noted.
@@ -48,12 +56,12 @@ These all fit the cheapest standard process at both fabs.
    | Different design | 1 |
    | Delivery format | Single PCB |
    | PCB thickness | 1.6 mm |
-   | PCB color | green is cheapest and fastest; any color works |
+   | PCB color | **Black** (the design is drawn for black mask + white silk); green is the cheapest and fastest |
    | Silkscreen | white |
-   | Surface finish | **HASL (with lead)** is cheapest; **LeadFree HASL** or **ENIG** (gold) is nicer for hand-soldering the ESP32 and USB-C fine pitch |
+   | Surface finish | **LeadFree HASL** or **ENIG** (gold, flattest, best for the 0.5 mm USB-C pins) for hand-soldering. HASL (with lead) is cheapest. **OSP** (JLC's new default) is fine if JLC assembles the board, but it's the worst choice for hand-soldering or storing bare boards, because the coating degrades within months and after heating |
    | Outer copper weight | 1 oz |
    | Via covering | Tented |
-   | Remove order number | "Specify a location" or "Yes (No order number)" *(extra fee)*. "No" lets JLC print a number in a random spot. |
+   | Mark on PCB | **Remove Mark** (no order number printed on the board) |
 
 4. **Save to cart** → **Checkout**. Pick shipping, then pay. Production usually takes 1–2 days; shipping is
    extra.
@@ -62,7 +70,10 @@ These all fit the cheapest standard process at both fabs.
 
 1. Do steps A1.1–A1.3, then switch on **PCB Assembly** at the bottom of the page.
 2. Assembly settings:
-   * **PCBA type:** Economic (cheapest) or Standard.
+   * **PCBA type:** Economic is the cheapest. If it's greyed out, change one of your PCB options and check
+     whether it becomes available; JLC restricts Economic to certain options, for example colour and surface
+     finish. Standard works, but it adds 5 mm edge rails (board becomes 78 × 70 mm, rails are snapped off
+     afterwards), a $1.50 feeder fee per unique part, and a larger setup cost.
    * **Assembly side:** Top side.
    * **Tooling holes:** Added by JLCPCB.
    * **Confirm parts placement:** Yes. They send you a placement preview to approve.
@@ -110,7 +121,7 @@ you'll reflow with paste at home.
    | Thickness | 1.6 mm |
    | Min track/spacing | 6/6 mil |
    | Min hole size | 0.3 mm |
-   | Solder mask | any color |
+   | Solder mask | **Black** |
    | Silkscreen | white |
    | Edge connector | No |
    | Surface finish | HASL lead-free or Immersion gold (ENIG) |
@@ -141,6 +152,9 @@ you'll reflow with paste at home.
    [COMPONENTS.md](COMPONENTS.md).
 
 ## C. Before you press "pay": checklist
+
+- [ ] Dimensions show **68 × 48 mm** and Layers **2**.
+- [ ] PCB color **Black**, silkscreen **White**.
 
 - [ ] `make check` printed **ALL CHECKS PASSED** after the last change.
 - [ ] The fab's Gerber viewer shows 68 × 48 mm, 2 layers, drills present, silk readable.

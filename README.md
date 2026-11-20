@@ -6,7 +6,8 @@ box, fan, LED strip) and plays them back from your phone, a script or Home Assis
 [![Release](https://img.shields.io/github/v/release/abhiramgcos/Esp_ir_board?label=release)](https://github.com/abhiramgcos/Esp_ir_board/releases/latest)
 ![KiCad](https://img.shields.io/badge/KiCad-9-314cb0)
 ![ESP32](https://img.shields.io/badge/MCU-ESP32--WROOM--32E-e7352c)
-![Board](https://img.shields.io/badge/PCB-68×48_mm,_2_layer-2e7d32)
+![Board](https://img.shields.io/badge/PCB-68×48_mm,_2_layer-222222)
+[![License](https://img.shields.io/badge/license-CERN--OHL--P_%2F_MIT-blue)](LICENSE)
 
 ![ESP32 IR Blaster, 3D render](docs/img/v2.1_3d_top_iso.png)
 
@@ -199,3 +200,11 @@ The remaining DRC **warnings** are expected:
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Power, USB, flashing, boot, Wi-Fi and IR debugging |
 | [docs/BUILD_LOG.md](docs/BUILD_LOG.md) | How the board was designed, step by step, with images |
 | [CHANGELOG.md](CHANGELOG.md) | Version history (v1 → v2.0 → v2.1) |
+
+## License
+
+* **Hardware** (`hardware/`, `fab/`, `v1/`, docs and images): [CERN-OHL-P-2.0](LICENSES/CERN-OHL-P-2.0.txt).
+* **Software** (`firmware/`, `esphome/`, `gen/`, `tools/`, `scripts/`, `setup/`): [MIT](LICENSES/MIT.txt).
+
+You can build, modify and sell boards and derivatives, including commercially. Keep the copyright and license
+notices, and point to this repository as the source. See [LICENSE](LICENSE) for details.
