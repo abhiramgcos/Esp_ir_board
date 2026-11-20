@@ -2,6 +2,16 @@
 
 Hardware and firmware share one version number. Hardware revisions are printed on the PCB silkscreen.
 
+## [2.1.2] - 2026-11-20
+
+Silkscreen only; copper, drills and BOM are unchanged from 2.1.1. Firmware stays 2.1.1.
+
+* Back silkscreen: a line-art portrait tribute traced into filled silkscreen polygons
+  (`gen/art/trace_portrait.py`; strokes kept ≥ 0.15 mm), with the credit underneath: *"Inspired by the one
+  and only T.K.V legend — visit his official site tkv.in.net"*.
+* The other back-side blocks (title, GPIO map, passives table, robot) are re-placed around it, clear of every
+  through-hole pad.
+
 ## [2.1.1] - 2026-11-20
 
 ### Hardware
@@ -80,6 +90,7 @@ JLCPCB BOM/CPL files.
 Original board. Only fab files exist; they are kept in `v1/fab/`. The review is in
 [docs/v1-review.md](docs/v1-review.md).
 
+[2.1.2]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.2
 [2.1.1]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.1
 [2.1.0]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.0
 [2.0.0]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.0.0

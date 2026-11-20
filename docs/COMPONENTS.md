@@ -1,6 +1,6 @@
 # Components: what each part does, what to buy, and safe alternatives
 
-**Board:** ESP32 IR Blaster/Receiver v2.1.1, 68 × 48 mm, 2 layers, 51 parts.
+**Board:** ESP32 IR Blaster/Receiver v2.1.2, 68 × 48 mm, 2 layers, 51 parts.
 
 The machine-readable BOM is in `fab/BOM_full.csv`; the JLCPCB-format BOM and pick-and-place files are in
 `fab/`. Values come from [`gen/circuit.py`](../gen/circuit.py), the single source of truth for the design.
