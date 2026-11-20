@@ -2,6 +2,16 @@
 
 Hardware and firmware share one version number. Hardware revisions are printed on the PCB silkscreen.
 
+## [2.1.3] - 2026-11-20
+
+* Buttons (SW1–SW3) and the pull-up/LED row below them moved 2 mm down, away from the ESP32. The gap from
+  the module's bottom pads to the button pads grows from 1.5 mm to 3.5 mm (bodies 2.1 → 4.1 mm), leaving
+  room for a soldering iron or hot-air nozzle on the module's bottom pins.
+* Fixed the ESP32 3D model position: the -32E model was rendered 2.99 mm too low on the -32D footprint
+  (different footprint origins), which made the module look like it overlapped the buttons. Renders only;
+  copper and manufacturing files were never affected.
+* Board re-routed; BOM unchanged, pick-and-place updated. Firmware stays 2.1.1.
+
 ## [2.1.2] - 2026-11-20
 
 Silkscreen only; copper, drills and BOM are unchanged from 2.1.1. Firmware stays 2.1.1.
@@ -90,6 +100,7 @@ JLCPCB BOM/CPL files.
 Original board. Only fab files exist; they are kept in `v1/fab/`. The review is in
 [docs/v1-review.md](docs/v1-review.md).
 
+[2.1.3]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.3
 [2.1.2]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.2
 [2.1.1]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.1
 [2.1.0]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.0

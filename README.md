@@ -11,7 +11,7 @@ box, fan, LED strip) and plays them back from your phone, a script or Home Assis
 
 ![ESP32 IR Blaster, 3D render](docs/img/v2.1_3d_top_iso.png)
 
-<sub>KiCad 3D render of the v2.1.2 board, not a photo. The USB-C model is a stand-in for the HRO part.</sub>
+<sub>KiCad 3D render of the v2.1.3 board, not a photo. The USB-C model is a stand-in for the HRO part.</sub>
 
 ## Features
 
@@ -191,7 +191,7 @@ The remaining DRC **warnings** are expected:
 
 ## Status
 
-* v2.1.2 hardware and v2.1.1 firmware are complete and verified by the checks above. **No board has been
+* v2.1.3 hardware and v2.1.1 firmware are complete and verified by the checks above. **No board has been
   manufactured yet**, so treat the first build as a prototype run.
 * Every SMD part has a verified, in-stock LCSC number, so JLCPCB's BOM tool matches the whole BOM
   automatically. The through-hole parts (IR LEDs, TSOP, buttons, headers) are left for hand soldering.
