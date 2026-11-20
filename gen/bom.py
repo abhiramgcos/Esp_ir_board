@@ -25,11 +25,19 @@ with open(os.path.join(out, 'BOM_JLCPCB.csv'), 'w', newline='') as f:
         if fp.startswith(THT):
             continue                                    # THT parts: hand solder (cheaper than JLC THT assembly)
         w.writerow([v, ','.join(srt(refs)), fp.split(':')[1], lc])
+# JLC's part models use a different zero orientation than KiCad's footprints for some packages.
+# Offsets checked against JLC's placement preview (v2.1.4 order): added to KiCad's rotation.
+JLC_ROT = {'ESP32-WROOM': -90, 'SOIC-': -90, 'SOT-23-5': -90, 'SOT-23-6': -90, 'SOT-23': 180}
+fp_of = {c['ref']: c['fp'].split(':')[1] for c in comps}
+def jlc_rot(ref, rot):
+    fp = fp_of.get(ref, '')
+    off = next((v for k, v in JLC_ROT.items() if fp.startswith(k)), 0)
+    return f"{(rot + off) % 360:.0f}"
 smd = {r for (v, fp, mpn, lc), refs in groups.items() if not fp.startswith(THT) for r in refs}
 with open(pos) as fi, open(os.path.join(out, 'CPL_JLCPCB.csv'), 'w', newline='') as fo:
     w = csv.writer(fo); w.writerow(['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation'])
     for row in csv.DictReader(fi):
         if row['Ref'] in smd:
             w.writerow([row['Ref'], f"{float(row['PosX']):.3f}mm", f"{float(row['PosY']):.3f}mm",
-                        'Top' if row['Side'] == 'top' else 'Bottom', f"{float(row['Rot']):.0f}"])
+                        'Top' if row['Side'] == 'top' else 'Bottom', jlc_rot(row['Ref'], float(row['Rot']))])
 print('BOM groups', len(groups), 'SMD placements', len(smd))

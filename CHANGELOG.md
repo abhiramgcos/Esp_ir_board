@@ -6,6 +6,9 @@ Hardware and firmware share one version number. Hardware revisions are printed o
 
 Silkscreen only; copper, drills, BOM and pick-and-place are unchanged from 2.1.3.
 
+* **Pick-and-place fix (CPL re-uploaded to the release):** JLC's part models are zeroed differently from
+  KiCad for some packages, so its preview showed U1 (ESP32), U2, U3, U4 turned 90° and Q1–Q3 turned 180°.
+  `gen/bom.py` now applies the offsets (ESP32 module, SOIC, SOT-23-5/6: −90°; SOT-23: 180°).
 * Back: the portrait is replaced by text credits: *Inspired by T.K.V* (github.com/tkv-04, tkv.in.net) and
   *Designed by abhiramgcos* (github.com/abhiramgcos, abhiramg.in). The portrait art and tracing script were
   removed from the repository.
