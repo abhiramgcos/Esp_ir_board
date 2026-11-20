@@ -51,3 +51,26 @@ site-packages. It can't be pip- or conda-installed. So:
 * **Ubuntu PPA failed** (proxy or offline): the script falls back to the distro's KiCad. Everything except
   `kicad-cli erc/drc` still works.
 * **pip SSL / proxy errors:** set `PIP_INDEX_URL` / `HTTPS_PROXY`, then re-run with `--no-system`.
+
+## 3D renders (`make render3d`, `tools/render3d.py`)
+
+`tools/render3d.py` draws offscreen 3D PNGs: top isometric, bottom isometric and straight-down top. It
+exists because KiCad 7/8 have no `kicad-cli pcb render`. On KiCad 9+, `make 3d` uses KiCad's own renderer.
+
+* **Python packages:** `trimesh`, `shapely`, `mapbox_earcut`, `pyrender`, `PyOpenGL==3.1.7`. They are in
+  `requirements.txt`, and `install.sh` installs them into `.venv`.
+* **OpenGL backend:** the script picks it automatically.
+  * It uses **OSMesa** (pure software, no display needed) if `libOSMesa` is found. Install it with
+    apt `libosmesa6` on Ubuntu up to 24.04; Mesa ≥ 25.1 has dropped OSMesa.
+  * Otherwise it uses **EGL**, which works on any desktop with a GPU driver (NVIDIA, AMD, Intel).
+  * To force one: `PYOPENGL_PLATFORM=egl make render3d` or `PYOPENGL_PLATFORM=osmesa make render3d`.
+* **Part models:** KiCad's VRML (`.wrl`) 3D models are read from `$KICAD9_3DMODEL_DIR` (and the
+  8/7/6 versions), `/usr/share/kicad/3dmodels`, or a folder given with `MODELS3D=/path/to/3dmodels make render3d`.
+  Install them with:
+  * Ubuntu/Debian: `sudo apt install kicad-packages3d` (big, ≈5 GB)
+  * Arch: `sudo pacman -S kicad-library-3d`
+  * Fedora: `sudo dnf install kicad-packages3d`
+
+  Footprints whose model is missing are drawn as plain boxes; the script prints which ones. The USB-C
+  receptacle (HRO TYPE-C-31-M-12) has no KiCad model, so a simple metal receptacle is drawn for it.
+* **Options:** `MASK=green|blue|black make render3d` sets the solder-mask colour (default black).

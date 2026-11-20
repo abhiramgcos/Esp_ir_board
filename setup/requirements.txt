@@ -6,3 +6,9 @@ scipy>=1.11
 pillow>=10.0
 scikit-image>=0.22
 pygerber>=2.4,<2.5        # tools/gerber_connectivity.py uses the 2.x API (pygerber.gerberx3.api.v2)
+# tools/render3d.py (offscreen 3D README renders). Headless needs libOSMesa (apt: libosmesa6, pacman/dnf: mesa).
+trimesh>=4.0
+shapely>=2.0
+mapbox_earcut>=1.0
+pyrender==0.1.45
+PyOpenGL==3.1.7           # newer than pyrender's pin (3.1.0), which lacks OSMesaCreateContextAttribs

@@ -1,0 +1,4 @@
+(version 1)
+# One thermal spoke is acceptable for GND pins hemmed in by tracks
+(rule "thermal spokes"
+  (constraint min_resolved_spokes 1))

@@ -6,6 +6,9 @@ import numpy as np
 from scipy import ndimage
 import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
+import router as R
+from placement import BOARD, HOLES
+BX0, BY0, BX1, BY1, _ = BOARD
 mode, PCB = sys.argv[1], sys.argv[2]
 mm = pcbnew.FromMM
 b = pcbnew.LoadBoard(PCB)
@@ -23,6 +26,11 @@ if mode == 'keepout':
     z.SetIsRuleArea(True); z.SetDoNotAllowTracks(True); z.SetDoNotAllowVias(True)
     z.SetDoNotAllowCopperPour(False); z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
     z.SetZoneName('no-tracks-under-ESP32')
+    # nothing at all under the part of the antenna that sits over the board
+    a = zone([(127.0, 99.0), (149.0, 99.0), (149.0, 101.6), (127.0, 101.6)], [pcbnew.F_Cu, pcbnew.B_Cu])
+    a.SetIsRuleArea(True); a.SetDoNotAllowTracks(True); a.SetDoNotAllowVias(True)
+    a.SetDoNotAllowCopperPour(True); a.SetDoNotAllowPads(False); a.SetDoNotAllowFootprints(False)
+    a.SetZoneName('no-tracks-under-antenna')
     pcbnew.SaveBoard(PCB, b); print('keepout done'); sys.exit()
 
 # antenna: the first ~1 mm of the antenna sits over the board -> no copper there on either layer
@@ -33,13 +41,12 @@ k.SetZoneName('antenna-keepout')
 
 gnd = b.GetNetInfo().GetNetItem('GND')
 for lay in (pcbnew.F_Cu, pcbnew.B_Cu):
-    z = zone([(100, 100), (176, 100), (176, 156), (100, 156)], [lay])
+    z = zone([(BX0, BY0), (BX1, BY0), (BX1, BY1), (BX0, BY1)], [lay])
     z.SetNet(gnd); z.SetMinThickness(mm(0.25)); z.SetLocalClearance(mm(0.3))
     z.SetThermalReliefGap(mm(0.4)); z.SetThermalReliefSpokeWidth(mm(0.5))
     z.SetPadConnection(pcbnew.ZONE_CONNECTION_THT_THERMAL); z.SetZoneName('GND')
 
 # ---- stitching vias where both layers are clear of foreign copper
-import router as R
 r = R.Router.__new__(R.Router)
 r.b = b
 r.netcodes = {str(n): ni.GetNetCode() for n, ni in b.GetNetInfo().NetsByName().items() if str(n)}
@@ -68,13 +75,13 @@ existing = [(pcbnew.ToMM(t.GetPosition().x), pcbnew.ToMM(t.GetPosition().y)) for
 def blocked(x, y):
     if 126.5 <= x <= 149.5 and 98 <= y <= 121.5:   # ESP32 body + antenna strip
         return True
-    if any(math.hypot(x - hx, y - hy) < 3.5 for hx, hy in [(103.2, 103.2), (172.8, 103.2), (103.2, 152.8), (172.8, 152.8)]):
+    if any(math.hypot(x - hx, y - hy) < 3.5 for hx, hy in HOLES):
         return True
     if any(math.hypot(x - px, y - py) < 1.5 for px, py in existing):
         return True
     return any(math.hypot(x - px, y - py) < 5.0 for px, py in placed)
-for y in np.arange(102.0, 155.0, 0.5):
-    for x in np.arange(102.0, 175.0, 0.5):
+for y in np.arange(BY0 + 2.0, BY1 - 1.0, 0.5):
+    for x in np.arange(BX0 + 2.0, BX1 - 1.0, 0.5):
         ix, iy = R.to_px(x, y)
         if ok[int(round(iy)), int(round(ix))] and not blocked(x, y):
             v = pcbnew.PCB_VIA(b); v.SetPosition(pcbnew.VECTOR2I(mm(float(x)), mm(float(y))))
