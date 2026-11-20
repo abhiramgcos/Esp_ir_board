@@ -1,13 +1,13 @@
 """Silkscreen: tidy reference designators, label every connector pin / button / LED, back-side title,
 pinout + value table for hand assembly, and an original doodle (IR robot). Usage: python3 silk.py board.kicad_pcb"""
-import sys, os, math, collections, json
+import sys, os, math, collections
 import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from circuit import comps
 from placement import BOARD, PLACE
 BX0, BY0, BX1, BY1, _ = BOARD
 UX = PLACE['U1'][0]                      # antenna strip = U1 x +-11 mm along the top edge
-REV = 'v2.1.3'
+REV = 'v2.1.4'
 # reference offsets (mm from footprint origin) for crowded parts, checked with kicad-cli DRC
 REF_AT = {'R3': (-3.3, 1.0), 'C7': (-3.3, 0.5), 'D6': (2.9, 0.0), 'U5': (-1.4, -7.6)}
 
@@ -223,30 +223,21 @@ def collect(fn):
     return wrap
 bad_back = 0
 MID = (BX0 + BX1) / 2
-# ---- portrait tribute (traced line art from gen/art/, see gen/art/trace_portrait.py) with its credit below
-ART = json.load(open(os.path.join(HERE, 'art', 'tkv_portrait.json')))
-def poly_shape(rings, ox, oy, mirror_w):
-    ps = pcbnew.SHAPE_POLY_SET(); ps.NewOutline()
-    for k, ring in enumerate(rings):
-        if k: ps.NewHole()
-        for x, y in ring:
-            px = ox + (mirror_w - x) if mirror_w else ox + x      # back side: mirror so it reads from below
-            ps.Append(mm(px), mm(oy + y), 0, k - 1 if k else -1)
-    sh = pcbnew.PCB_SHAPE(b); sh.SetShape(pcbnew.SHAPE_T_POLY); sh.SetPolyShape(ps)
-    sh.SetFilled(True); sh.SetWidth(0); sh.SetLayer(B); b.Add(sh)
-CREDIT = [('Inspired by the one and only', 0.8, False), ('T.K.V LEGEND', 1.3, True),
-          ('visit his official site', 0.8, False), ('tkv.in.net', 1.0, True)]
+# ---- credits block (text only)
+CREDITS = [('INSPIRED BY T.K.V', 1.1, True), ('github.com/tkv-04', 0.8, False), ('tkv.in.net', 0.8, False),
+           None,
+           ('DESIGNED BY ABHIRAMGCOS', 1.1, True), ('github.com/abhiramgcos', 0.8, False), ('abhiramg.in', 0.8, False)]
 @collect
-def portrait(ox, oy):
-    w, h = ART['w'], ART['h']
-    for rings in ART['polys']:
-        poly_shape(rings, ox, oy, w)
-    y = oy + h + 1.0
-    for s_, size, bold in CREDIT:
+def credits(ox, oy):
+    y = oy
+    for item in CREDITS:
+        if item is None:
+            y += 1.0; continue
+        s_, size, bold = item
         y += size * 0.75
-        text(s_, ox + w / 2, y, size, B, bold=bold)
+        text(s_, ox, y, size, B, bold=bold)
         y += size * 0.75 + 0.35
-bad_back += place_block(portrait, (BX0 + 4, BY0 + 5)) > 0
+bad_back += place_block(credits, (BX0 + 13, BY0 + 10)) > 0
 @collect
 def title(ox, oy):
     text('ESP32 IR BLASTER', MID + ox, BY0 + 4.2 + oy, 2.0, B, bold=True)
