@@ -69,12 +69,17 @@ install_system() {
   elif have apt-get; then
     local pkgs=(kicad gerbv librsvg2-bin git python3 python3-venv python3-pip xdg-utils) missing=()
     # Ubuntu (and derivatives): KiCad 9 from the official PPA unless KiCad 8+ is already there
-    if [[ "$id" == "ubuntu" || "$like" == *ubuntu* ]] && (( $(kicad_major) < 8 )); then
+    # Newer Ubuntu releases (25.04+, e.g. 26.04) ship KiCad 9+ themselves; the PPA may not have builds for them.
+    local cand; cand=$(apt-cache policy kicad 2>/dev/null | awk '/Candidate:/{print $2}' | sed -E 's/^[0-9]+://; s/\..*//')
+    if [[ "$id" == "ubuntu" || "$like" == *ubuntu* ]] && (( $(kicad_major) < 8 )) && ! [[ "$cand" =~ ^[0-9]+$ && $cand -ge 8 ]]; then
       if ! grep -rqs "kicad/kicad-9.0-releases" /etc/apt/sources.list /etc/apt/sources.list.d/; then
         ok "Adding PPA kicad/kicad-9.0-releases"
         $SUDO apt-get update -qq
         $SUDO apt-get install -y -qq software-properties-common
-        $SUDO add-apt-repository -y ppa:kicad/kicad-9.0-releases || warn "PPA could not be added; using distro KiCad"
+        if ! $SUDO add-apt-repository -y ppa:kicad/kicad-9.0-releases; then
+          warn "PPA could not be added; using distro KiCad"
+          $SUDO add-apt-repository -y --remove ppa:kicad/kicad-9.0-releases >/dev/null 2>&1 || true
+        fi
       fi
       missing+=(kicad)   # force upgrade from the PPA
     fi
