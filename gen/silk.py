@@ -4,12 +4,13 @@ import sys, os, math, collections
 import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from circuit import comps
-from placement import BOARD, PLACE
+from placement import BOARD, PLACE, SOCK_X, SOCK_Y
+from circuit import DEVKIT_L, DEVKIT_R
 BX0, BY0, BX1, BY1, _ = BOARD
-UX = PLACE['U1'][0]                      # antenna strip = U1 x +-11 mm along the top edge
-REV = 'v2.1.4'
+UX = (SOCK_X[0] + SOCK_X[1]) / 2          # DevKit antenna strip along the top edge
+REV = 'PM-1.0'
 # reference offsets (mm from footprint origin) for crowded parts, checked with kicad-cli DRC
-REF_AT = {'R3': (-3.3, 1.0), 'C7': (-3.3, 0.5), 'D6': (2.9, 0.0), 'U5': (-1.4, -7.6)}
+REF_AT = {'R1': (-2.4, 0.0)}
 
 PCB = sys.argv[1]
 b = pcbnew.LoadBoard(PCB)
@@ -66,7 +67,7 @@ placed_boxes = []
 court = {}
 for fp in b.GetFootprints():
     fp.BuildCourtyardCaches(); cyy = fp.GetCourtyard(pcbnew.F_CrtYd)
-    if cyy.OutlineCount() and not fp.GetReference().startswith('U1'):
+    if cyy.OutlineCount() and fp.GetReference()[:2] not in ('J1', 'J2'):
         bb = cyy.BBox(); court[fp.GetReference()] = (ToMM(bb.GetLeft()), ToMM(bb.GetTop()), ToMM(bb.GetRight()), ToMM(bb.GetBottom()))
 CUR = [None]
 def overlaps(a, c):
@@ -79,7 +80,7 @@ def score(bx):
         return 1000
     s = sum(10 for p in pad_boxes if overlaps(bx, p)) + sum(25 for q in placed_boxes if overlaps(bx, q))
     s += sum(3 for r_, c in court.items() if r_ != CUR[0] and overlaps(bx, c))
-    if UX - 12 < bx[2] and bx[0] < UX + 12 and bx[1] < BY0 + 1.8:   # antenna strip
+    if UX - 15 < bx[2] and bx[0] < UX + 15 and bx[1] < BY0 + 1.8:   # antenna strip
         s += 50
     return s
 
@@ -103,18 +104,26 @@ def pad_xy(ref, num):
     p = next(p for p in fps[ref].Pads() if p.GetNumber() == num)
     return ToMM(p.GetPosition().x), ToMM(p.GetPosition().y)
 
-j3 = ['GND', 'TX', 'RX', 'EN', 'IO0', '3V3']
-for i, s in enumerate(j3):
-    x, y = pad_xy('J3', str(i + 1)); label(s, x, y + 2.05, 0.8)
-x, y = pad_xy('J3', '1'); label('UART (ESP side)', x - 1.0, y - 2.6, 0.8, LEFT)
-j4 = ['VIN', '3V3', 'GND', 'SDA', 'SCL', '18', '19', '23', '25', '26', '32', '33', '34', '35']
-for i, s in enumerate(j4):
-    x, y = pad_xy('J4', str(i + 1)); label(s, x, y + 2.05, 0.8)
-x, y = pad_xy('J4', '1'); label('EXPANSION  (IO34/35 input only)', x - 1.0, y - 2.6, 0.8, LEFT)
-x, y = pad_xy('J2', '1'); label('5V IN', x - 0.2, y + 2.0, 0.8); x2, y2 = pad_xy('J2', '2'); label('GND', x2 + 0.6, y2 + 2.0, 0.8)
-for ref, s in (('SW1', 'RESET'), ('SW2', 'BOOT'), ('SW3', 'USER IO13')):
-    fp = fps[ref]; bb = fp.GetBoundingBox(False, False)
-    label(s, ToMM(bb.GetCenter().x), ToMM(bb.GetBottom()) + 0.9, 0.85, bold=True)
+# DevKit sockets: outline of the module, pin names inside (check them against your board before plugging in)
+DX0, DX1 = SOCK_X[0] - 2.0, SOCK_X[1] + 2.0              # guide outline, just outside the sockets
+DY1 = SOCK_Y + 14 * 2.54 + 3.0                            # USB end, ~3 mm past the last pin
+for (p_, q_) in (((DX0, BY0 + 0.6), (DX0, DY1)), ((DX1, BY0 + 0.6), (DX1, DY1)), ((DX0, DY1), (DX1, DY1))):
+    line(p_, q_, F, 0.15)
+for i, (l_, r_) in enumerate(zip(DEVKIT_L, DEVKIT_R)):
+    y = SOCK_Y + 2.54 * i
+    label(l_, SOCK_X[0] + 1.6, y, 0.8, LEFT); label(r_, SOCK_X[1] - 1.6, y, 0.8, RIGHT)
+label('ESP32 DEVKIT V1', UX, SOCK_Y + 5.0, 1.2, bold=True)
+label('30-PIN, 25.4 mm ROWS', UX, SOCK_Y + 7.0, 0.8)
+label('ANTENNA THIS END', UX, SOCK_Y + 2.6, 0.8)
+label('USB THIS END', UX, DY1 - 1.4, 0.9, bold=True)
+label('PINS MUST MATCH', UX, SOCK_Y + 27.5, 0.8)
+label('BEFORE PLUGGING IN', UX, SOCK_Y + 29.0, 0.8)
+j3 = ['VIN', '3V3', 'GND', 'SDA', 'SCL', '18', '19', '23', '25', '26', '32', '33', '34', '35']
+for i, s_ in enumerate(j3):
+    x, y = pad_xy('J3', str(i + 1)); label(s_, x + 1.5, y, 0.8, LEFT)
+x, y = pad_xy('J3', '1'); label('EXP', x + 0.4, y - 2.4, 0.8)
+fp = fps['SW1']; bb = fp.GetBoundingBox(False, False)
+label('USER IO13', ToMM(bb.GetCenter().x), ToMM(bb.GetBottom()) + 0.9, 0.85, bold=True)
 def around(ref, gap=0.8):
     """candidate centres around a footprint's courtyard (above, below, left, right, corners)"""
     fp = fps[ref]; fp.BuildCourtyardCaches(); cy = fp.GetCourtyard(pcbnew.F_CrtYd)
@@ -136,13 +145,10 @@ def free_spot(s, size, bold, pref):
     cands = sorted(((BX0 + 2 + 0.5 * i, BY0 + 2 + 0.5 * j) for i in range(int((BX1 - BX0 - 4) * 2))
                     for j in range(int((BY1 - BY0 - 4) * 2))), key=lambda c: math.hypot(c[0] - pref[0], c[1] - pref[1]))
     return place_text(t, cands), t
-near('USB-C', ['J1'], bold=True)
-near('PWR', ['D5'], 0.8)
-near('IO2', ['D6'], 0.8)
-near('IR TX x2', ['D3', 'D4'], bold=True)
-near('IR RX', ['U5'], 0.85, bold=True)
-near('38kHz', ['U5'], 0.8)
-_, tt = free_spot(f'ESP32 IR {REV}', 1.2, True, (BX1 - 8, BY1 - 6))
+near('IO2', ['D3'], 0.8)
+free_spot('IR TX x2', 1.0, True, (151.0, 112.6))
+free_spot('IR RX', 0.9, True, (162.5, 107.6))
+_, tt = free_spot(f'ESP32 IR {REV}', 1.2, True, (BX1 - 20, BY1 - 5))
 p = tt.GetPosition(); free_spot('github.com/abhiramgcos', 0.8, False, (ToMM(p.x), ToMM(p.y) + 1.9))
 
 # ------------------------------------------------------------------ reference designators
@@ -161,9 +167,7 @@ for fp in sorted(b.GetFootprints(), key=lambda f: (f.GetReference() not in REF_A
     l, t, r, bt = ToMM(bb.GetLeft()), ToMM(bb.GetTop()), ToMM(bb.GetRight()), ToMM(bb.GetBottom())
     cx, cy_ = (l + r) / 2, (t + bt) / 2
     CUR[0] = fp.GetReference()
-    if fp.GetReference() == 'U1':
-        cands = [(138.0, 116.0)]
-    elif fp.GetReference() in REF_AT:      # hand-picked spots where the auto search has no clean option
+    if fp.GetReference() in REF_AT:      # hand-picked spots where the auto search has no clean option
         dx, dy = REF_AT[fp.GetReference()]
         x0_, y0_ = ToMM(fp.GetPosition().x), ToMM(fp.GetPosition().y)
         cands = [(x0_ + dx, y0_ + dy)]
@@ -193,7 +197,7 @@ def bbox_union(items):
 def back_score(bx):
     if bx[0] < BX0 + 0.6 or bx[1] < BY0 + 0.6 or bx[2] > BX1 - 0.6 or bx[3] > BY1 - 0.6:
         return 1e6
-    if UX - 12 < bx[2] and bx[0] < UX + 12 and bx[1] < BY0 + 1.8:
+    if UX - 15 < bx[2] and bx[0] < UX + 15 and bx[1] < BY0 + 1.8:
         return 1e6
     return sum(100 for p in back_pads if overlaps(bx, p)) + sum(1 for p in back_obs if overlaps(bx, p)) + sum(1000 for q in back_placed if overlaps(bx, (q[0] - 0.8, q[1] - 0.8, q[2] + 0.8, q[3] + 0.8)))
 def place_block(draw, pref, step=0.5, optional=False):
@@ -237,31 +241,31 @@ def credits(ox, oy):
         y += size * 0.75
         text(s_, ox, y, size, B, bold=bold)
         y += size * 0.75 + 0.35
-bad_back += place_block(credits, (BX0 + 13, BY0 + 10)) > 0
+bad_back += place_block(credits, (UX, BY0 + 33)) > 0
 @collect
 def title(ox, oy):
-    text('ESP32 IR BLASTER', MID + ox, BY0 + 4.2 + oy, 2.0, B, bold=True)
-    text(f'{REV}  |  2026-11  |  abhiramgcos  |  KiCad', MID + ox, BY0 + 6.9 + oy, 0.9, B)
-bad_back += place_block(title, (0, 0)) > 0
+    text('ESP32 IR BLASTER', MID + ox, BY0 + 4.2 + oy, 1.5, B, bold=True)
+    text(f'POOR-MAN EDITION  {REV}', MID + ox, BY0 + 6.4 + oy, 0.9, B, bold=True)
+    text('all through-hole  |  2026-11', MID + ox, BY0 + 7.9 + oy, 0.8, B)
+bad_back += place_block(title, (UX - MID, 1.0)) > 0
 vals = collections.OrderedDict()
 for c in comps:
-    if c['lib'] in ('Device:R', 'Device:C'):
+    if c['lib'] in ('Device:R', 'Device:C', 'Device:C_Polarized'):
         vals.setdefault(c['value'], []).append(c['ref'])
 rows = [f"{v:>5} {','.join(sorted(r, key=lambda s: (s[0], int(s[1:]))))}" for v, r in vals.items()]
 LS = 1.2
 @collect
 def passives(ox, oy):
-    text('PASSIVES 0805', ox, oy, 0.9, B, RIGHT, bold=True)
+    text('VALUES', ox, oy, 0.9, B, RIGHT, bold=True)
     for i, rrow in enumerate(rows):
-        text(rrow.replace('22uF', '22uF*').replace('18R', '18R*'), ox, oy + 0.2 + LS * (i + 1), 0.8, B, RIGHT)
-    text('* = 1206', ox, oy + 0.2 + LS * (len(rows) + 1), 0.8, B, RIGHT)
-bad_back += place_block(passives, (MID + 8, BY1 - 17)) > 0
-gp = ['GPIO MAP', 'IR TX   IO4', 'IR RX   IO16', 'LED     IO2', 'BUTTON  IO13', 'I2C     IO21/22', 'UART0   IO1/3']
+        text(rrow, ox, oy + 0.2 + LS * (i + 1), 0.8, B, RIGHT)
+bad_back += place_block(passives, (UX + 10.5, BY0 + 12.5)) > 0
+gp = ['GPIO MAP', 'IR TX   IO4', 'IR RX   IO16', 'LED     IO2', 'BUTTON  IO13', 'I2C     IO21/22']
 @collect
 def gpio(ox, oy):
     for i, s_ in enumerate(gp):
         text(s_, ox, oy + 1.1 * i, 0.9 if i == 0 else 0.8, B, RIGHT, bold=(i == 0))
-bad_back += place_block(gpio, (BX1 - 3, BY1 - 17)) > 0
+bad_back += place_block(gpio, (UX - 1.0, BY0 + 12.5)) > 0
 # doodle: a little robot beaming IR waves at you (original drawing)
 @collect
 def doodle(cx, cy, k=0.75):

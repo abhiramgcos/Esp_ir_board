@@ -9,6 +9,8 @@ HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import router as R
 from placement import BOARD, HOLES
 BX0, BY0, BX1, BY1, _ = BOARD
+from placement import SOCK_X
+ANT = [(SOCK_X[0] - 2.0, 99.0), (SOCK_X[1] + 2.0, 99.0), (SOCK_X[1] + 2.0, 104.0), (SOCK_X[0] - 2.0, 104.0)]
 mode, PCB = sys.argv[1], sys.argv[2]
 mm = pcbnew.FromMM
 b = pcbnew.LoadBoard(PCB)
@@ -22,20 +24,15 @@ def zone(pts, layers):
     b.Add(z); return z
 
 if mode == 'keepout':
-    z = zone([(130.0, 101.0), (146.0, 101.0), (146.0, 118.6), (130.0, 118.6)], [pcbnew.F_Cu])
-    z.SetIsRuleArea(True); z.SetDoNotAllowTracks(True); z.SetDoNotAllowVias(True)
-    z.SetDoNotAllowCopperPour(False); z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
-    z.SetZoneName('no-tracks-under-ESP32')
-    # nothing at all under the part of the antenna that sits over the board
-    a = zone([(127.0, 99.0), (149.0, 99.0), (149.0, 101.6), (127.0, 101.6)], [pcbnew.F_Cu, pcbnew.B_Cu])
+    # the DevKit antenna overhangs the top edge; keep the board strip under its base free of copper
+    a = zone(ANT, [pcbnew.F_Cu, pcbnew.B_Cu])
     a.SetIsRuleArea(True); a.SetDoNotAllowTracks(True); a.SetDoNotAllowVias(True)
     a.SetDoNotAllowCopperPour(True); a.SetDoNotAllowPads(False); a.SetDoNotAllowFootprints(False)
-    a.SetZoneName('no-tracks-under-antenna')
+    a.SetZoneName('no-copper-under-antenna')
     pcbnew.SaveBoard(PCB, b); print('keepout done'); sys.exit()
 
-# antenna: the first ~1 mm of the antenna sits over the board -> no copper there on either layer
-k = zone([(127.0, 99.0), (149.0, 99.0), (149.0, 101.5), (127.0, 101.5)], [pcbnew.F_Cu, pcbnew.B_Cu])
-k.SetIsRuleArea(True); k.SetDoNotAllowCopperPour(True); k.SetDoNotAllowTracks(False)
+k = zone(ANT, [pcbnew.F_Cu, pcbnew.B_Cu])
+k.SetIsRuleArea(True); k.SetDoNotAllowCopperPour(True); k.SetDoNotAllowTracks(True)
 k.SetDoNotAllowVias(True); k.SetDoNotAllowPads(False); k.SetDoNotAllowFootprints(False)
 k.SetZoneName('antenna-keepout')
 
@@ -61,7 +58,7 @@ for t in b.GetTracks():
         li = 0 if t.GetLayer() == pcbnew.F_Cu else 1
         r.tracks.setdefault(net, []).append((li, [(pcbnew.ToMM(t.GetStart().x), pcbnew.ToMM(t.GetStart().y)),
                                                    (pcbnew.ToMM(t.GetEnd().x), pcbnew.ToMM(t.GetEnd().y))]))
-R.Router.width = lambda self, net: 0.5 if net in R.NETCLASS_POWER else 0.25
+R.Router.width = lambda self, net: R.W_PWR if net in R.NETCLASS_POWER else R.W_SIG
 own = r.owner()
 code = r.netcodes['GND']
 need = 0.3 + 0.3 + 0.1   # via radius + zone clearance + margin
@@ -73,7 +70,9 @@ for o, bs in zip(own, base):
 placed = []
 existing = [(pcbnew.ToMM(t.GetPosition().x), pcbnew.ToMM(t.GetPosition().y)) for t in b.GetTracks() if t.Type() == pcbnew.PCB_VIA_T]
 def blocked(x, y):
-    if 126.5 <= x <= 149.5 and 98 <= y <= 121.5:   # ESP32 body + antenna strip
+    if SOCK_X[0] - 3 <= x <= SOCK_X[1] + 3 and y <= 150:   # under the DevKit: pour only, no via clutter
+        return True
+    if x >= 168 and 107 <= y <= 146:                          # expansion header labels
         return True
     if any(math.hypot(x - hx, y - hy) < 3.5 for hx, hy in HOLES):
         return True

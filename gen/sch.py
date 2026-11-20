@@ -24,9 +24,9 @@ sch.version = 20230121
 sch.generator = 'eeschema'
 sch.uuid = uid()
 sch.paper = PageSettings(paperSize='A3')
-sch.titleBlock = TitleBlock(title='ESP32 IR Blaster / Receiver', date='2026-11-20', revision='2.1.4',
+sch.titleBlock = TitleBlock(title='ESP32 IR Blaster - poor-man (all THT)', date='2026-11-20', revision='PM-1.0',
                             company='abhiramgcos',
-                            comments={1: 'USB-C, CH340C auto-program, 2x IR LED @100 mA, TSOP38238',
+                            comments={1: 'ESP32 DevKit V1 in sockets, 2x IR LED @85 mA (S8050), VS1838B receiver',
                                       2: 'Generated from gen/circuit.py - edit there and regenerate'})
 
 libs = {}

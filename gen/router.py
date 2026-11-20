@@ -23,10 +23,10 @@ CLR = 0.2                    # copper clearance
 EDGE = 0.45                  # copper-to-edge
 VIA_D, VIA_DRILL = 0.6, 0.3
 VIA_COST = 60                # in grid steps (~3 mm of track): fewer vias
-W_SIG, W_PWR, W_FINE = 0.25, 0.5, 0.2
-FINE = {'USB_DP', 'USB_DN', 'CC1', 'CC2'}
+W_SIG, W_PWR, W_FINE = 0.4, 0.8, 0.2     # wide tracks: easy to repair by hand
+FINE = set()
 W_FINE = 0.15
-SPECIAL = {'VBUS': 0.3}
+SPECIAL = {}
 MARGIN = 0.01                # raster is already ~G conservative; DRC verifies
 mm = pcbnew.FromMM; ToMM = pcbnew.ToMM
 V = lambda x, y: pcbnew.VECTOR2I(mm(float(x)), mm(float(y)))

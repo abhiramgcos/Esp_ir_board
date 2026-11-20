@@ -11,13 +11,7 @@ from placement import PLACE, BOARD, HOLES, NETCLASS_POWER
 
 SCH, OUT = sys.argv[1], sys.argv[2]
 # 3D models for footprints whose stock model is missing or not the real part (used by kicad-cli pcb render)
-MODEL_OVERRIDE = {
-    # real part is the -32E. Its model is drawn for KiCad's -32E footprint, whose origin sits 2.99 mm lower
-    # than the -32D footprint used here (same pads), so lift the model by 2.99 mm to sit on the pads.
-    'U1': ('${KICAD9_3DMODEL_DIR}/RF_Module.3dshapes/ESP32-WROOM-32E.step', (0, 2.99, 0)),
-    # no stock model for HRO TYPE-C-31-M-12: GCT USB4105 is the same 16-pin top-mount horizontal style
-    'J1': '${KICAD9_3DMODEL_DIR}/Connector_USB.3dshapes/USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal.step',
-}
+MODEL_OVERRIDE = {}
 def set_model(fp, spec):
     path, off = spec if isinstance(spec, tuple) else (spec, (0, 0, 0))
     ms = fp.Models()

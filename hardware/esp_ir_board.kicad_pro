@@ -303,19 +303,7 @@
       },
       {
         "netclass": "Power",
-        "pattern": "VBUS"
-      },
-      {
-        "netclass": "Power",
-        "pattern": "VBUS_F"
-      },
-      {
-        "netclass": "Power",
         "pattern": "VIN"
-      },
-      {
-        "netclass": "Power",
-        "pattern": "EXT5V"
       },
       {
         "netclass": "Power",

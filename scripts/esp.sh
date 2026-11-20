@@ -56,7 +56,7 @@ ESP32 IR board toolkit  (repo: $ROOT)
   gerbers   View fab/gerbers in gerbv
   render    Schematic + top/bottom/back-silk PNGs into $RENDER/
   check     ERC (netlist vs design), DRC, independent Gerber connectivity check
-  bom       Print fab/BOM_full.csv as a table
+  bom       Print fab/BOM.csv as a table
   fab       Regenerate Gerbers, drills, BOMs, CPL and the zip in fab/
   rebuild   Regenerate the whole board from gen/ into build/ (does not touch hardware/)
   help      This list
@@ -169,7 +169,7 @@ cmd_check() {
 }
 
 cmd_bom() {
-  "$PY" - fab/BOM_full.csv <<'PY'
+  "$PY" - fab/BOM.csv <<'PY'
 import csv, sys, shutil, signal
 signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 rows = list(csv.reader(open(sys.argv[1])))

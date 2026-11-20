@@ -1,0 +1,18 @@
+Qty,Designators,Value,What to buy,Footprint
+1,J1,DevKit left,15-pin female header 2.54 mm,PinSocket_1x15_P2.54mm_Vertical
+1,J2,DevKit right,15-pin female header 2.54 mm,PinSocket_1x15_P2.54mm_Vertical
+1,R3,22R,22R 1/4 W axial,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal
+2,"D1,D2",IR 940nm,"5 mm 940 nm IR LED (TSAL6200 or any ""IR transmitter LED"")",LED_D5.0mm_Horizontal_O1.27mm_Z3.0mm_Clear
+1,Q1,S8050,"S8050 or 2N2222A (TO-92, E-B-C)",TO-92_Inline_Wide
+1,R1,470R,470R 1/4 W axial,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal
+2,"R2,R6",10k,10k 1/4 W axial,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal
+1,C1,100uF,100 uF 16 V electrolytic,CP_Radial_D5.0mm_P2.00mm
+1,U1,VS1838B,VS1838B or TSOP38238 (pins OUT-GND-VCC). NOT TSOP1738: different pinout,Vishay_MOLD-3Pin
+1,R4,100R,100R 1/4 W axial,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal
+1,C2,10uF,10 uF 16 V electrolytic,CP_Radial_D5.0mm_P2.00mm
+1,R5,1k,1k 1/4 W axial,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal
+1,D3,BLUE,"5 mm LED, any colour",LED_D5.0mm
+1,SW1,USER,6x6 mm tactile switch,SW_PUSH_6mm_H5mm
+2,"R7,R8",4.7k,4.7k 1/4 W axial,R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal
+1,J3,EXPANSION,14-pin male header 2.54 mm,PinHeader_1x14_P2.54mm_Vertical
+1,(plugs into J1/J2),ESP32 DevKit V1,"ESP32 DevKit V1, 30-pin (DOIT layout), rows 25.4 mm apart",-

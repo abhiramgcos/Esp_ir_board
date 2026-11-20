@@ -1,148 +1,89 @@
-"""ESP32 IR Blaster/Receiver board v2 - single source of truth for schematic + PCB.
+"""ESP32 IR Blaster - "poor-man" edition: every part through-hole, the ESP32 is a plug-in DevKit.
 
-Each component: ref, lib_id, value, footprint, pins{pin_number: net}, fields, schematic pos (x, y, rot).
+Order only the bare PCB and solder everything yourself with a normal iron. All parts are common in Indian
+hobby shops (SP Road, Lamington Road, Ritchie Street) and on Robu.in / Amazon.in.
+Same GPIOs as the SMD board, so the firmware and the ESPHome package run unchanged.
+
+Each component: ref, lib_id, value, footprint, pins{pin_number: net}, schematic pos (x, y, rot).
 Pins not listed are marked no-connect.
 """
-R805 = 'Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder'
-R1206 = 'Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder'
-C805 = 'Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder'
-C1206 = 'Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder'
-LED805 = 'LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder'
-# IR LEDs lie flat, leads bent 90 deg, lens pointing out of the board edge (same direction as the TSOP)
-IRLED = 'LED_THT:LED_D5.0mm_Horizontal_O1.27mm_Z3.0mm_Clear'
-SOT23 = 'Package_TO_SOT_SMD:SOT-23'
+RES = 'Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal'    # 1/4 W carbon/metal film
+ECAP = 'Capacitor_THT:CP_Radial_D5.0mm_P2.00mm'                         # electrolytic, 5 mm can
+IRLED = 'LED_THT:LED_D5.0mm_Horizontal_O1.27mm_Z3.0mm_Clear'           # lies flat, lens over the board edge
+LED5 = 'LED_THT:LED_D5.0mm'
 HDR = 'Connector_PinHeader_2.54mm:PinHeader_1x{:02d}_P2.54mm_Vertical'
+SOCK = 'Connector_PinSocket_2.54mm:PinSocket_1x15_P2.54mm_Vertical'
 BTN = 'Button_Switch_THT:SW_PUSH_6mm_H5mm'
-
-# Well-known LCSC numbers (verify stock before ordering)
-LCSC = {
-    '10k': 'C17414', '5.1k': 'C27834', '1k': 'C17513', '100R': 'C17408', '4.7k': 'C17673',
-    '100k': 'C149504', '100nF': 'C49678', '10uF': 'C15850', '1uF': 'C28323',
-    '22uF': 'C12891',   # 22uF 25V X5R 1206 (Samsung CL31A226KAHNNNE)
-    '18R': 'C137378',   # 18R 1% 1206 (Yageo RC1206FR-0718RL)
-}
 
 comps = []
 
 
-def add(ref, lib, value, fp, pins, pos, rot=0, mpn='', lcsc=None, dnp=False, desc=''):
-    if lcsc is None:
-        lcsc = LCSC.get(value, '')
+def add(ref, lib, value, fp, pins, pos, rot=0, mpn='', dnp=False, desc=''):
     comps.append(dict(ref=ref, lib=lib, value=value, fp=fp, pins=pins, pos=pos, rot=rot,
-                      mpn=mpn, lcsc=lcsc, dnp=dnp, desc=desc))
+                      mpn=mpn, lcsc='', dnp=dnp, desc=desc))
 
 
-def R(ref, val, a, b, pos, fp=R805, **kw):
-    add(ref, 'Device:R', val, fp, {'1': a, '2': b}, pos, **kw)
+def R(ref, val, a, b, pos, **kw):
+    add(ref, 'Device:R', val, RES, {'1': a, '2': b}, pos, mpn=f'{val} 1/4 W axial', **kw)
 
 
-def C(ref, val, a, b, pos, fp=C805, **kw):
-    add(ref, 'Device:C', val, fp, {'1': a, '2': b}, pos, **kw)
+def CP(ref, val, plus, minus, pos, **kw):
+    add(ref, 'Device:C_Polarized', val, ECAP, {'1': plus, '2': minus}, pos, **kw)
 
 
-# ---------------------------------------------------------------- power / USB
-usb = {p: 'VBUS' for p in ('A4', 'A9', 'B4', 'B9')}
-usb.update({p: 'GND' for p in ('A1', 'A12', 'B1', 'B12', 'S1')})
-usb.update({'A5': 'CC1', 'B5': 'CC2', 'A6': 'USB_DP', 'B6': 'USB_DP', 'A7': 'USB_DN', 'B7': 'USB_DN'})
-add('J1', 'Connector:USB_C_Receptacle_USB2.0_16P', 'USB-C',
-    'Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12', usb, (45, 75),
-    mpn='HRO TYPE-C-31-M-12', lcsc='C165948')
-R('R1', '5.1k', 'CC1', 'GND', (80, 45))
-R('R2', '5.1k', 'CC2', 'GND', (92, 45))
-add('U3', 'Power_Protection:USBLC6-2SC6', 'USBLC6-2SC6', 'Package_TO_SOT_SMD:SOT-23-6',
-    {'1': 'USB_DP', '6': 'USB_DP', '3': 'USB_DN', '4': 'USB_DN', '2': 'GND', '5': 'VBUS'},
-    (45, 135), mpn='USBLC6-2SC6', lcsc='C7519')
-add('F1', 'Device:Polyfuse', '0.75A hold', 'Fuse:Fuse_1206_3216Metric_Pad1.42x1.75mm_HandSolder',
-    {'1': 'VBUS', '2': 'VBUS_F'}, (115, 45), mpn='PTTC SMD1206P075TFT (0.75 A hold, 8 V)', lcsc='C545214')
-add('D1', 'Device:D_Schottky', 'SS14', 'Diode_SMD:D_SMA_Handsoldering',
-    {'1': 'VIN', '2': 'VBUS_F'}, (135, 45), rot=0, mpn='SS14', lcsc='C2480')
-add('D2', 'Device:D_Schottky', 'SS14', 'Diode_SMD:D_SMA_Handsoldering',
-    {'1': 'VIN', '2': 'EXT5V'}, (135, 65), rot=0, mpn='SS14', lcsc='C2480')
-add('J2', 'Connector_Generic:Conn_01x02', 'EXT 5V', HDR.format(2),
-    {'1': 'EXT5V', '2': 'GND'}, (110, 70), mpn='2.54 mm header 1x2')
-C('C1', '22uF', 'VIN', 'GND', (150, 85), fp=C1206, mpn='22uF 16V X5R 1206')
-C('C2', '1uF', 'VIN', 'GND', (162, 85))
-add('U2', 'Regulator_Linear:AP2112K-3.3', 'AP2112K-3.3', 'Package_TO_SOT_SMD:SOT-23-5',
-    {'1': 'VIN', '2': 'GND', '3': 'VIN', '5': '+3V3'}, (185, 50),
-    mpn='AP2112K-3.3TRG1', lcsc='C51118')
-C('C3', '10uF', '+3V3', 'GND', (210, 50))
-add('D5', 'Device:LED', 'GREEN', LED805, {'2': '+3V3_LED', '1': 'GND'}, (232, 60), rot=0,
-    mpn='KENTO KT-0805G', lcsc='C2297', desc='Power LED')
-R('R12', '1k', '+3V3', '+3V3_LED', (232, 45))
+# ---------------------------------------------------------------- ESP32 DevKit V1 (30 pin, DOIT layout)
+# Seen from the top, antenna up, USB down. Rows are 25.4 mm (1 inch) apart.
+DEVKIT_L = ['EN', 'VP', 'VN', '34', '35', '32', '33', '25', '26', '27', '14', '12', '13', 'GND', 'VIN']
+DEVKIT_R = ['23', '22', 'TX0', 'RX0', '21', '19', '18', '5', 'TX2', 'RX2', '4', '2', '15', 'GND', '3V3']
+left = {'4': 'IO34', '5': 'IO35', '6': 'IO32', '7': 'IO33', '8': 'IO25', '9': 'IO26',
+        '13': 'BTN_USER', '14': 'GND', '15': 'VIN'}
+right = {'1': 'IO23', '2': 'SCL', '5': 'SDA', '6': 'IO19', '7': 'IO18',
+         '10': 'IR_RX', '11': 'IR_TX', '12': 'LED_USER', '14': 'GND', '15': '+3V3'}
+add('J1', 'Connector_Generic:Conn_01x15', 'DevKit left', SOCK, left, (60, 120),
+    mpn='15-pin female header 2.54 mm', desc='ESP32 DevKit V1 30-pin, left row')
+add('J2', 'Connector_Generic:Conn_01x15', 'DevKit right', SOCK, right, (120, 120),
+    mpn='15-pin female header 2.54 mm', desc='ESP32 DevKit V1 30-pin, right row')
 
-# ---------------------------------------------------------------- USB-UART + auto program
-add('U4', 'Interface_USB:CH340C', 'CH340C', 'Package_SO:SOIC-16_3.9x9.9mm_P1.27mm',
-    {'16': '+3V3', '4': '+3V3', '1': 'GND', '5': 'USB_DP', '6': 'USB_DN',
-     '2': 'CH_TX', '3': 'ESP_TX', '13': 'DTR', '14': 'RTS'}, (60, 215),
-    mpn='CH340C', lcsc='C84681')
-C('C8', '100nF', '+3V3', 'GND', (25, 215))
-R('R5', '1k', 'CH_TX', 'ESP_RX', (100, 190), desc='Lets an external UART on J3 override CH340')
-add('Q1', 'Transistor_BJT:MMBT3904', 'MMBT3904', SOT23,
-    {'1': 'Q1_B', '2': 'RTS', '3': 'EN'}, (130, 215), mpn='MMBT3904', lcsc='C20526')
-add('Q2', 'Transistor_BJT:MMBT3904', 'MMBT3904', SOT23,
-    {'1': 'Q2_B', '2': 'DTR', '3': 'IO0'}, (130, 250), mpn='MMBT3904', lcsc='C20526')
-R('R6', '10k', 'DTR', 'Q1_B', (110, 215))
-R('R7', '10k', 'RTS', 'Q2_B', (110, 250))
-
-# ---------------------------------------------------------------- ESP32
-esp = {'1': 'GND', '15': 'GND', '38': 'GND', '39': 'GND', '2': '+3V3', '3': 'EN',
-       '25': 'IO0', '34': 'ESP_RX', '35': 'ESP_TX', '26': 'IR_TX', '27': 'IR_RX', '24': 'LED_USER',
-       '16': 'BTN_USER', '33': 'SDA', '36': 'SCL', '30': 'IO18', '31': 'IO19', '37': 'IO23',
-       '10': 'IO25', '11': 'IO26', '8': 'IO32', '9': 'IO33', '6': 'IO34', '7': 'IO35'}
-add('U1', 'RF_Module:ESP32-WROOM-32E', 'ESP32-WROOM-32E', 'RF_Module:ESP32-WROOM-32D', esp,
-    (215, 160), mpn='ESP32-WROOM-32E-N4', lcsc='C701341')
-C('C5', '22uF', '+3V3', 'GND', (175, 120), fp=C1206, mpn='22uF 16V X5R 1206')
-C('C6', '100nF', '+3V3', 'GND', (187, 120))
-R('R3', '10k', '+3V3', 'EN', (165, 160))
-C('C7', '1uF', 'EN', 'GND', (165, 180))
-add('SW1', 'Switch:SW_Push', 'RESET', BTN, {'1': 'EN', '2': 'GND'}, (160, 200), mpn='6x6 mm tactile THT')
-R('R4', '10k', '+3V3', 'IO0', (180, 200))
-add('SW2', 'Switch:SW_Push', 'BOOT', BTN, {'1': 'IO0', '2': 'GND'}, (175, 225), mpn='6x6 mm tactile THT')
-add('J3', 'Connector_Generic:Conn_01x06', 'UART', HDR.format(6),
-    {'1': 'GND', '2': 'ESP_TX', '3': 'ESP_RX', '4': 'EN', '5': 'IO0', '6': '+3V3'}, (175, 260),
-    mpn='2.54 mm header 1x6')
-
-# ---------------------------------------------------------------- IR transmit (2 LEDs in series)
-add('Q3', 'Transistor_FET:AO3400A', 'AO3400A', SOT23,
-    {'1': 'IR_G', '2': 'GND', '3': 'IR_K'}, (320, 95), mpn='AO3400A', lcsc='C20917')
-R('R8', '100R', 'IR_TX', 'IR_G', (295, 95))
-R('R9', '100k', 'IR_G', 'GND', (305, 110))
-R('R10', '18R', 'VIN', 'IR_A', (325, 40), fp=R1206, mpn='18 ohm 1206 1%', desc='~100 mA LED current')
-add('D3', 'Device:LED', 'TSAL6200', IRLED, {'2': 'IR_A', '1': 'IR_MID'}, (325, 55),
-    rot=0, mpn='Vishay TSAL6200', lcsc='C55528')
-add('D4', 'Device:LED', 'TSAL6200', IRLED, {'2': 'IR_MID', '1': 'IR_K'}, (325, 72),
-    rot=0, mpn='Vishay TSAL6200', lcsc='C55528')
-C('C10', '22uF', 'VIN', 'GND', (345, 45), fp=C1206, mpn='22uF 16V X5R 1206')
+# ---------------------------------------------------------------- IR transmit: 2 LEDs in series, ~80 mA
+R('R3', '22R', 'VIN', 'IR_A', (200, 45), desc='LED current: (5 - 2x1.3 - 0.2) V / 22 R = ~85 mA')
+add('D1', 'Device:LED', 'IR 940nm', IRLED, {'2': 'IR_A', '1': 'IR_MID'}, (215, 55),
+    mpn='5 mm 940 nm IR LED (TSAL6200 or any "IR transmitter LED")')
+add('D2', 'Device:LED', 'IR 940nm', IRLED, {'2': 'IR_MID', '1': 'IR_K'}, (215, 72),
+    mpn='5 mm 940 nm IR LED (TSAL6200 or any "IR transmitter LED")')
+add('Q1', 'Transistor_BJT:S8050', 'S8050', 'Package_TO_SOT_THT:TO-92_Inline_Wide',
+    {'1': 'GND', '2': 'IR_B', '3': 'IR_K'}, (215, 95), mpn='S8050 or 2N2222A (TO-92, E-B-C)')
+R('R1', '470R', 'IR_TX', 'IR_B', (190, 95))
+R('R2', '10k', 'IR_B', 'GND', (200, 110), desc='keeps the LEDs off while the ESP32 boots')
+CP('C1', '100uF', 'VIN', 'GND', (235, 50), mpn='100 uF 16 V electrolytic', desc='reservoir for the LED pulses')
 
 # ---------------------------------------------------------------- IR receive
-add('U5', 'Interface_Optical:TSOP382xx', 'TSOP38238', 'OptoDevice:Vishay_MOLD-3Pin',
-    {'1': 'IR_RX', '2': 'GND', '3': 'IR_VS'}, (320, 150), mpn='Vishay TSOP38238', lcsc='C141632')
-R('R11', '100R', '+3V3', 'IR_VS', (290, 140))
-C('C11', '10uF', 'IR_VS', 'GND', (300, 160))
+add('U1', 'Interface_Optical:TSOP382xx', 'VS1838B', 'OptoDevice:Vishay_MOLD-3Pin',
+    {'1': 'IR_RX', '2': 'GND', '3': 'IR_VS'}, (210, 150),
+    mpn='VS1838B or TSOP38238 (pins OUT-GND-VCC). NOT TSOP1738: different pinout')
+R('R4', '100R', '+3V3', 'IR_VS', (180, 140))
+CP('C2', '10uF', 'IR_VS', 'GND', (190, 160), mpn='10 uF 16 V electrolytic')
 
 # ---------------------------------------------------------------- user I/O
-R('R13', '1k', 'LED_USER', 'LED_USER_A', (285, 200))
-add('D6', 'Device:LED', 'BLUE', LED805, {'2': 'LED_USER_A', '1': 'GND'}, (285, 215), rot=0,
-    mpn='KENTO KT-0805B', lcsc='C2293', desc='User LED on IO2')
-R('R14', '10k', '+3V3', 'BTN_USER', (305, 200))
-add('SW3', 'Switch:SW_Push', 'USER', BTN, {'1': 'BTN_USER', '2': 'GND'}, (320, 215), mpn='6x6 mm tactile THT')
-R('R15', '4.7k', '+3V3', 'SDA', (345, 200))
-R('R16', '4.7k', '+3V3', 'SCL', (355, 200))
+R('R5', '1k', 'LED_USER', 'LED_USER_A', (180, 200))
+add('D3', 'Device:LED', 'BLUE', LED5, {'2': 'LED_USER_A', '1': 'GND'}, (180, 215),
+    mpn='5 mm LED, any colour', desc='User LED on IO2')
+R('R6', '10k', '+3V3', 'BTN_USER', (200, 200))
+add('SW1', 'Switch:SW_Push', 'USER', BTN, {'1': 'BTN_USER', '2': 'GND'}, (215, 215), mpn='6x6 mm tactile switch')
+R('R7', '4.7k', '+3V3', 'SDA', (235, 200))
+R('R8', '4.7k', '+3V3', 'SCL', (245, 200))
 exp = ['VIN', '+3V3', 'GND', 'SDA', 'SCL', 'IO18', 'IO19', 'IO23', 'IO25', 'IO26', 'IO32', 'IO33', 'IO34', 'IO35']
-add('J4', 'Connector_Generic:Conn_01x14', 'EXPANSION', HDR.format(14),
-    {str(i + 1): n for i, n in enumerate(exp)}, (370, 240), mpn='2.54 mm header 1x14')
+add('J3', 'Connector_Generic:Conn_01x14', 'EXPANSION', HDR.format(14),
+    {str(i + 1): n for i, n in enumerate(exp)}, (265, 230), mpn='14-pin male header 2.54 mm')
 
 for i, pos in enumerate([(260, 270), (270, 270), (280, 270), (290, 270)]):
-    add(f'H{i+1}', 'Mechanical:MountingHole', 'M2', 'MountingHole:MountingHole_2.2mm_M2', {}, pos)
+    add(f'H{i+1}', 'Mechanical:MountingHole', 'M3', 'MountingHole:MountingHole_3.2mm_M3', {}, pos)
 
-# nets that need a PWR_FLAG for ERC (passive-driven power nets)
-pwr_flags = {'GND': (25, 260), 'VIN': (150, 65), 'IR_VS': (280, 165), 'VBUS': (80, 100)}
+# nets that need a PWR_FLAG for ERC (fed through the DevKit sockets)
+pwr_flags = {'GND': (25, 200), 'VIN': (25, 210), '+3V3': (25, 220), 'IR_VS': (170, 165)}
 
 blocks = [
-    ('POWER: USB-C, ESD, fuse, diode-OR, 3.3 V LDO', (20, 25)),
-    ('USB-UART + AUTO-PROGRAM', (20, 180)),
-    ('ESP32-WROOM-32E', (160, 100)),
-    ('IR TRANSMIT: 2x TSAL6200 @ ~100 mA', (280, 25)),
-    ('IR RECEIVE: TSOP38238 38 kHz', (280, 125)),
-    ('USER I/O + EXPANSION (I2C pull-ups 4.7k)', (280, 185)),
+    ('ESP32 DEVKIT V1 (30-pin) in two 15-pin sockets', (40, 60)),
+    ('IR TRANSMIT: 2x 940 nm LED @ ~85 mA, S8050 switch', (170, 25)),
+    ('IR RECEIVE: VS1838B / TSOP38238', (170, 125)),
+    ('USER I/O + EXPANSION (I2C pull-ups 4.7k)', (170, 185)),
 ]
