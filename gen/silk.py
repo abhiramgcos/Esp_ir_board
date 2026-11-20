@@ -1,13 +1,13 @@
 """Silkscreen: tidy reference designators, label every connector pin / button / LED, back-side title,
 pinout + value table for hand assembly, and an original doodle (IR robot). Usage: python3 silk.py board.kicad_pcb"""
-import sys, os, math, collections
+import sys, os, math, collections, json
 import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from circuit import comps
 from placement import BOARD, PLACE
 BX0, BY0, BX1, BY1, _ = BOARD
 UX = PLACE['U1'][0]                      # antenna strip = U1 x +-11 mm along the top edge
-REV = 'v2.1.1'
+REV = 'v2.1.2'
 # reference offsets (mm from footprint origin) for crowded parts, checked with kicad-cli DRC
 REF_AT = {'R3': (-3.3, 1.0), 'C7': (-3.3, 0.5), 'D6': (2.9, 0.0)}
 
@@ -196,8 +196,9 @@ def back_score(bx):
     if UX - 12 < bx[2] and bx[0] < UX + 12 and bx[1] < BY0 + 1.8:
         return 1e6
     return sum(100 for p in back_pads if overlaps(bx, p)) + sum(1 for p in back_obs if overlaps(bx, p)) + sum(1000 for q in back_placed if overlaps(bx, (q[0] - 0.8, q[1] - 0.8, q[2] + 0.8, q[3] + 0.8)))
-def place_block(draw, pref, step=0.5):
-    """draw(ox, oy) -> items; keep the lowest-score origin, ties -> nearest to pref"""
+def place_block(draw, pref, step=0.5, optional=False):
+    """draw(ox, oy) -> items; keep the lowest-score origin, ties -> nearest to pref.
+    optional=True: if every spot would cover a through-hole pad, leave the block out."""
     items = draw(0, 0); bb0 = bbox_union(items)
     for it in items: unlink(it)
     best = None
@@ -209,6 +210,9 @@ def place_block(draw, pref, step=0.5):
             if sc >= 1e6: continue
             key = (sc, math.hypot(ox - pref[0], oy - pref[1]))
             if best is None or key < best[0]: best = (key, ox, oy, bx)
+    if optional and best[0][0] >= 100:
+        print('  optional back block left out (no pad-free spot)')
+        return 0
     items = draw(best[1], best[2]); back_placed.append(best[3])
     return best[0][0]
 # track what a block drew by UUID (SWIG ids are unstable; KiCad 9 prepends new drawings)
@@ -219,6 +223,30 @@ def collect(fn):
     return wrap
 bad_back = 0
 MID = (BX0 + BX1) / 2
+# ---- portrait tribute (traced line art from gen/art/, see gen/art/trace_portrait.py) with its credit below
+ART = json.load(open(os.path.join(HERE, 'art', 'tkv_portrait.json')))
+def poly_shape(rings, ox, oy, mirror_w):
+    ps = pcbnew.SHAPE_POLY_SET(); ps.NewOutline()
+    for k, ring in enumerate(rings):
+        if k: ps.NewHole()
+        for x, y in ring:
+            px = ox + (mirror_w - x) if mirror_w else ox + x      # back side: mirror so it reads from below
+            ps.Append(mm(px), mm(oy + y), 0, k - 1 if k else -1)
+    sh = pcbnew.PCB_SHAPE(b); sh.SetShape(pcbnew.SHAPE_T_POLY); sh.SetPolyShape(ps)
+    sh.SetFilled(True); sh.SetWidth(0); sh.SetLayer(B); b.Add(sh)
+CREDIT = [('Inspired by the one and only', 0.8, False), ('T.K.V LEGEND', 1.3, True),
+          ('visit his official site', 0.8, False), ('tkv.in.net', 1.0, True)]
+@collect
+def portrait(ox, oy):
+    w, h = ART['w'], ART['h']
+    for rings in ART['polys']:
+        poly_shape(rings, ox, oy, w)
+    y = oy + h + 1.0
+    for s_, size, bold in CREDIT:
+        y += size * 0.75
+        text(s_, ox + w / 2, y, size, B, bold=bold)
+        y += size * 0.75 + 0.35
+bad_back += place_block(portrait, (BX0 + 4, BY0 + 5)) > 0
 @collect
 def title(ox, oy):
     text('ESP32 IR BLASTER', MID + ox, BY0 + 4.2 + oy, 2.0, B, bold=True)
@@ -259,7 +287,7 @@ def doodle(cx, cy, k=0.75):
     for r in (1.3, 2.4, 3.5):                                      # IR waves
         arc((cx + k * 7.4, cy + k * 3.4), k * r, -50, 20, w=0.2)
     text('beep-boop 38kHz', cx, cy + k * 8.0 + 0.4, 0.8, B)
-bad_back += place_block(doodle, (BX0 + 12, BY1 - 14)) > 0
+bad_back += place_block(doodle, (BX0 + 12, BY1 - 14), optional=True) > 0
 
 pcbnew.ZONE_FILLER(b).Fill(b.Zones())
 pcbnew.SaveBoard(PCB, b)
