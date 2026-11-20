@@ -33,7 +33,7 @@ then commit and push (section 6).
   and the conda `(base)` env is **auto-activated** in his shell.
 * **Repo:** <https://github.com/abhiramgcos/Esp_ir_board>, cloned at `~/Desktop/projects/Esp_ir_board`.
   * `main`: finished, verified **v2.0** board.
-  * `v2.1-optimize`: unfinished **v2.1** (this handoff).
+  * `v2.1-optimize`: finished **v2.1** (pending merge).
 * **Bootstrap:** `~/Desktop/projects/get_esp_ir_board.sh` did the clone and install. He started it at about
   11:08 IST on 2026-11-20 and it was waiting on sudo. **Check it finished** (`kicad-cli version`, `ls .venv`).
   If the KiCad PPA step failed on 26.04, the fix is already on the branch: the installer now uses the distro
@@ -122,67 +122,21 @@ Other tools:
   Specctra DSN → Freerouting jar → import SES (in the GUI, or `pcbnew.ImportSpecctraSES`). Only switch if the
   custom router can't reach DRC = 0.
 
-## 5. v2.1: current state and exact remaining work
+## 5. v2.1: status (2026-11-20, local session)
 
-**Branch `v2.1-optimize` contains:**
-* **`gen/placement.py`:** compact **68 × 48 mm** layout (v2.0 was 76 × 56), holes at (103.2, 103.2),
-  (164.8, 103.2), (103.2, 144.8), (164.8, 144.8). A placement-only DRC was clean (no courtyard overlaps).
-* **`gen/router.py`:**
-  * octilinear pulling
-  * power-first order
-  * `VIA_COST=60`
-  * rip-up with jitter
-  * tight-margin "fine_zone" within 1 mm of J1 SMD pads (width 0.15 for USB_DP/DN/CC1/CC2, 0.3 for VBUS)
-* **`gen/zones.py`:**
-  * reads `BOARD`/`HOLES` from `placement.py`
-  * antenna track+via+pour keepout `x 127–149, y 99–101.6` on both layers
-* **`gen/sch.py`:** revision 2.1.
-* **`wip/v2.1/`:** the last fully routed v2.1 board, made **before** the fine_zone change.
-  * All nets routed. Track length 1634 mm (v2.0: 1733). 79 stitching vias (v2.0: about 110).
-  * **DRC: 7 clearance errors, 0.177–0.189 mm.**
-    * VBUS track near J1 A1/B12 GND (around 107–109, 119)
-    * USB_DN near U4 pin 14 (around 116.6, 129.4)
-  * The fine_zone change is the intended fix. It has **not** been tested.
-  * Routing takes ≈5 min (about 30 s per rip-up round).
-* **`tools/render3d.py` + `make render3d`:** done, working. v2.0 samples are in `docs/img/v2.0_3d_*.png`.
+**Done** (details in `docs/BUILD_LOG.md` Step 6):
+* Generators ported to KiCad 9.
+* v2.1 rebuilt cleanly with `gen/build.sh`: 0 DRC errors, 0 unconnected, Gerber check 0/0/0.
+* Silk auto-placed; no silk on pads, no overlaps.
+* `hardware/` and `fab/` updated.
+* Official KiCad 3D renders (with `kicad-packages3d`).
+* `firmware/` compiles (`pio run`).
+* `docs/ORDERING.md`, `docs/COMPONENTS.md` and the README updated.
 
-**Remaining:**
-1. Port the generators to KiCad 9 APIs (see the gotchas above).
-2. Build v2.1: `cd gen && ./build.sh ../build`, or step by step. Get **DRC = 0 errors**, with
-   `kicad-cli pcb drc` *and* `gen/drc.py`, plus `make check`-style Gerber connectivity = 0 shorts/0 opens/0
-   mismatches.
-   * If errors remain, re-run the router, raise the margin, or nudge placement (e.g. move U3/R1/R2 or U4 by
-     0.5–1 mm).
-3. **`gen/silk.py` is still hard-coded for 76 × 56:**
-   * The score bounds `100.4/175.6/155.6`.
-   * The positions of the "USB-C", "PWR", "IO2", "IR TX x2", "IR RX", "38 kHz" and "ESP32 IR v2.x"/github
-     labels.
-   * The back-side title (≈134, 104.2).
-   * GPIO map (≈104, 129.5).
-   * The passives table, which must fit between the SW pads (y ≤ 128.5) and J3/J4 (pads at y = 145). Use
-     1.05 mm line spacing.
-   * The robot doodle (≈157, 135.5).
-
-   Derive positions from `BOARD` and footprint positions, change the title to **v2.1**, render with
-   `kicad-cli pcb export svg` (+ `--mirror` for the back), and **look at the PNGs**. Iterate until there's no
-   silk on pads and no overlaps.
-4. Copy the final `.kicad_sch/.kicad_pcb/.kicad_pro/.kicad_dru` into `hardware/` (same run, so the UUIDs
-   match). Then:
-   * `make fab`: Gerbers/drill/BOM/CPL/zip.
-   * Regenerate the schematic PDF + `hardware/docs/assembly_top.pdf`.
-   * `make render`.
-   * `make render3d`, plus `kicad-cli pcb render` (KiCad 9) for official top/bottom/iso images.
-   * `tools/gerber_connectivity.py fab/gerbers --circuit gen`.
-5. **README:**
-   * A "3D views" section near the top with the renders (top iso, bottom iso, top), clearly labelled as
-     **renders**.
-   * Update the board size to 68 × 48 and the images.
-   * A v2.0 → v2.1 table: area −23 %, track length, via count, 45° routing, antenna keepout.
-   * Update the verification numbers.
-6. **`docs/BUILD_LOG.md`:** add **Step 6: v2.1 optimisation + 3D renders**, with before/after images and
-   numbers. Keep the v2.0 images under `docs/img/v2_*` for history; add `v2.1_*`.
-7. Delete `wip/` and this file's "remaining" list (or move it into BUILD_LOG). Commit in logical steps, push,
-   then merge `v2.1-optimize` → `main` **only after Abhiram says OK** (or open a PR with `gh pr create`).
+**Open:**
+* Merge `v2.1-optimize` → `main` once Abhiram OKs it.
+* Fill the missing LCSC numbers (ESP32, TSOP, TSAL6200, PTC, LEDs).
+* First real build: test the firmware on hardware.
 
 ## 6. Conventions
 

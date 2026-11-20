@@ -156,3 +156,81 @@ schematic pins checked: 162  mismatches: 0
 ```
 
 So the copper that gets manufactured matches the schematic, pin for pin.
+
+## Step 6: v2.1 optimisation, KiCad 9, 3D renders, firmware and guides
+
+Same circuit as v2.0. The layout, tooling and documentation were reworked. Done on the local machine
+(Ubuntu 26.04, KiCad 9.0.8) after the hand-off from the cloud session.
+
+### 6a. Toolchain on KiCad 9
+* `pcb.py`: `FOOTPRINT.SetProperty` was removed in KiCad 8, so MPN/LCSC are now hidden `PCB_FIELD`s.
+  Footprints also keep their library nickname (`SetFPID`), which removes 51 schematic-parity warnings.
+* `drc.py` / `zones.py`: `EDA_UNITS_MILLIMETRES` → `EDA_UNITS_MM` (falls back to the old name on KiCad 7).
+* `silk.py`:
+  * KiCad 9 adds new drawings at the *front* of the list, so blocks are now tracked by UUID.
+  * Removed items are kept referenced, because freeing them corrupted the board under SWIG (segfault on a
+    second run). Re-runs are now idempotent.
+* Installer: `pyrender` is installed with `--no-deps` so PyOpenGL 3.1.7 can stay pinned (pip refused the
+  combination on Python 3.14).
+* v2.0 passed `make check` on KiCad 9 before anything was changed.
+
+### 6b. Compact layout and routing
+* **Placement** (`gen/placement.py`): **68 × 48 mm**, down from 76 × 56 (−23 % area).
+* **Router** (`gen/router.py`):
+  * 45° string-pulling, power nets first, higher via cost, rip-up with order jitter.
+  * The tight USB-C margin (`fine_zone`) now applies only to the 0.5 mm-pitch D+/D−/CC nets. VBUS keeps the
+    normal margin, so it leaves its pad straight instead of cutting past the A1/B12 GND pad. That diagonal
+    entry caused the last 4 clearance errors (0.177–0.190 mm).
+  * Via sites now keep ≥0.25 mm hole-to-hole from **every** drilled hole, including same-net ones. This fixes
+    a warning at J4 pin 1.
+* **Antenna keep-out:** no tracks, vias or pour under the antenna strip on either layer.
+* Router run: 16 rip-up rounds, about 5 min, all nets routed.
+
+### 6c. Silkscreen for any board size
+`silk.py` derives everything from `BOARD` and the footprints instead of fixed coordinates:
+* Functional labels (USB-C, PWR, IO2, IR TX ×2, IR RX / 38 kHz) search around their part's courtyard.
+* The front title and URL do a grid search for free space.
+* The back blocks (title, GPIO map, passives table, robot doodle) each scan the back for the spot with no
+  through-hole pads and the fewest vias.
+* Three crowded reference designators (R3, C7, D6) and U5 use hand-picked offsets (`REF_AT`) checked by DRC.
+
+Result: **no silk on pads and no silk overlaps**. Previews come from `scripts/silk_preview.sh`.
+
+| Top | Back (as you hold it) |
+|---|---|
+| ![v2.1 top silk](img/v2.1_top_silk.png) | ![v2.1 back](img/v2.1_bottom_view.png) |
+
+### 6d. 3D renders
+* KiCad's 3D library (`kicad-packages3d`) is now installed.
+* U1 uses the real **ESP32-WROOM-32E** model.
+* J1 uses the GCT USB4105 model as a stand-in for the HRO TYPE-C-31-M-12, which has no stock model but the
+  same 16-pin top-mount shape.
+* The renders are from `kicad-cli pcb render --quality high`.
+
+| v2.0 (box fallback renderer) | v2.1 (KiCad 9, real models) |
+|---|---|
+| ![v2.0](img/v2.0_3d_top_iso.png) | ![v2.1](img/v2.1_3d_top_iso.png) |
+
+### 6e. Firmware and guides
+* `firmware/`: PlatformIO project (IRremoteESP8266 2.8.6, ArduinoJson 7.2.1, WiFiManager 2.0.17).
+  * Learn / store / send, web UI, REST API, button actions, serial console, OTA.
+  * `pio run`: success, Flash 1.08 MB (55 %), RAM 50.8 kB (15.5 %).
+* `docs/ORDERING.md`: JLCPCB and PCBWay, bare and assembled, step by step.
+* `docs/COMPONENTS.md`: every part's job and drop-in alternatives.
+* `firmware/README.md`: flashing (PlatformIO, VS Code, Arduino IDE), first-time Wi-Fi setup, API, Home
+  Assistant.
+
+### 6f. Verification (clean rebuild with `gen/build.sh`, then `make fab` + `make check`)
+
+| | v2.0 | v2.1 |
+|---|---|---|
+| Size | 76.1 × 56.1 mm | **68.1 × 48.1 mm** |
+| Track length | 1733 mm | **1624 mm** |
+| Vias (total) | 220 | **201** (75 stitching) |
+| KiCad DRC errors / unconnected | 0 / 0 | **0 / 0** |
+| Gerber check | 41 nets, 0 shorts, 0 opens, 0 mismatches | **41 nets, 0 shorts, 0 opens, 0 mismatches** |
+
+Remaining DRC **warnings** (both versions):
+* Silk clipped at the board edge where the ESP32 antenna and USB-C overhang on purpose.
+* A net-name prefix note (`VIN` in the PCB vs `/VIN` in the schematic). This comes from the generator using
+  local labels and has no electrical effect.
