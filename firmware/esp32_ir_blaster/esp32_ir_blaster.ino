@@ -230,7 +230,7 @@ void setupWeb() {
     d["learn_left_ms"] = learn.active ? (int32_t)(learn.until - millis()) : 0;
     if (!lastRx.isNull()) d["last"] = lastRx;
     d["ip"] = WiFi.localIP().toString(); d["rssi"] = WiFi.RSSI();
-    d["uptime_s"] = millis() / 1000; d["heap"] = ESP.getFreeHeap(); d["codes"] = codes.size();
+    d["version"] = FW_VERSION; d["uptime_s"] = millis() / 1000; d["heap"] = ESP.getFreeHeap(); d["codes"] = codes.size();
     sendJson(200, d);
   });
 
@@ -329,7 +329,7 @@ void setup() {
   pinMode(PIN_BUTTON, INPUT_PULLUP);
   Serial.begin(115200);
   delay(50);
-  Serial.println("\nESP32 IR board firmware " __DATE__);
+  Serial.println("\nESP32 IR Blaster firmware v" FW_VERSION " (" __DATE__ ")");
 
   irsend.begin();
   irrecv.setTolerance(IR_TOLERANCE);

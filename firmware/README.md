@@ -1,185 +1,217 @@
-# Firmware: ESP32 IR Blaster / Receiver
+# Firmware
 
-Full working firmware for the board (v2.0 and v2.1 have the same pin map).
+Arduino-framework firmware for the ESP32 IR board (hardware v2.0 and v2.1 share the same pin map).
+Using Home Assistant? The [ESPHome configuration](../esphome/README.md) is an alternative to this firmware.
 
-* **Learn** codes from any IR remote: TVs, set-top boxes, ACs, fans, LED strips.
-  * Decoded protocols (NEC, Sony, RC5/RC6, Samsung, LG, Panasonic, the A/C protocols…) are stored compactly.
-  * Anything else is stored as raw timings.
-* **Store** codes by name in flash (`/codes.json` on LittleFS). They survive reboots and firmware updates.
-* **Send** them from a web page on your phone, a REST API (scripts, Home Assistant), the serial console, or the
-  USER button.
-* **Wi-Fi setup portal**: no passwords in the code.
-* **OTA updates** after the first USB flash.
+**What it does:**
+* Learns IR codes from almost any remote:
+  * decoded protocols (NEC, Sony, RC5/RC6, Samsung, LG, Panasonic, JVC, …),
+  * full A/C state frames,
+  * raw timings for anything unknown.
+* Stores codes by name in flash (`/codes.json` on LittleFS). They survive reboots and OTA updates.
+* Sends codes from:
+  * a web page,
+  * a JSON REST API,
+  * the serial console,
+  * the USER button.
+* Wi-Fi is set up through a captive portal, so no credentials are compiled in.
+* OTA updates after the first USB flash.
 
-| Pin | Use |
+```
+firmware/
+├── esp32_ir_blaster/          Arduino sketch folder (open this in the Arduino IDE)
+│   ├── esp32_ir_blaster.ino   application
+│   ├── config.h               pins, timeouts, hostname, version
+│   └── web_ui.h               single-page web UI (embedded, works offline)
+└── platformio.ini             PlatformIO build of the same sketch
+```
+
+| GPIO | Function |
 |---|---|
-| IO4 | IR transmit → AO3400A → 2× TSAL6200 (HIGH = on) |
-| IO16 | IR receive ← TSOP38238 (active low) |
-| IO2 | blue user LED |
+| IO4 | IR TX → AO3400A → 2× TSAL6200 (HIGH = on) |
+| IO16 | IR RX ← TSOP38238 (active low) |
+| IO2 | blue status LED |
 | IO13 | USER button (active low) |
-| IO21 / IO22 | I²C SDA / SCL on J4 (4.7 k pull-ups) |
+| IO21 / IO22 | I²C SDA / SCL on J4 |
 
-## 1. Flash it (USB-C, no buttons needed)
+## Flashing
 
-The board has a CH340C USB-serial chip with DTR/RTS auto-reset, so the computer can put the ESP32 into
-bootloader mode by itself.
+Pick one method. The board has a CH340C with auto-reset, so none of them needs a button press: plug in USB-C
+and flash.
 
-### Option A: PlatformIO CLI (recommended, what this repo is tested with)
+### Option 1: prebuilt binary, from the browser (no install)
+
+1. Download `esp32_ir_blaster_v2.1.0_full.bin` from the
+   [latest release](https://github.com/abhiramgcos/Esp_ir_board/releases/latest).
+2. Open the **[ESP Tool web flasher](https://espressif.github.io/esptool-js/)** in Chrome or Edge.
+   (Web Serial doesn't work in Firefox or Safari.)
+3. Click **Connect** and pick the **USB-SERIAL CH340** port.
+4. Set flash address **`0x0`**, choose the `_full.bin` file, and click **Program**.
+5. When it finishes, press **RESET** on the board.
+
+Command-line equivalent:
 
 ```bash
-cd ~/Desktop/projects/Esp_ir_board
-source .venv/bin/activate
-pip install platformio
+pip install esptool
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 write_flash 0x0 esp32_ir_blaster_v2.1.0_full.bin
+```
+
+On Windows the port is `COM3` or similar; on macOS it is `/dev/cu.wchusbserial*`.
+
+### Option 2: Arduino IDE 2.x
+
+One-time setup:
+1. *File → Preferences → Additional boards manager URLs*: add
+   `https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
+2. *Tools → Board → Boards Manager*: install **esp32 by Espressif Systems, version `2.0.17`**.
+   Core 3.x is not supported by IRremoteESP8266 2.8.6 yet.
+3. *Tools → Manage Libraries*: install these exact versions:
+
+   | Library | Author | Version |
+   |---|---|---|
+   | IRremoteESP8266 | David Conran | 2.8.6 |
+   | ArduinoJson | Benoît Blanchon | 7.x |
+   | WiFiManager | tzapu | 2.0.17 |
+
+Flash:
+1. *File → Open* and choose `firmware/esp32_ir_blaster/esp32_ir_blaster.ino`. The `.h` files open as tabs.
+2. Set the *Tools* menu:
+
+   | Setting | Value |
+   |---|---|
+   | Board | **ESP32 Dev Module** |
+   | Partition Scheme | **Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS)** |
+   | Upload Speed | 921600 (use 115200 if uploads fail) |
+   | Core Debug Level | None (use "Info" or "Debug" when troubleshooting) |
+   | Port | the CH340 port (`/dev/ttyUSB0`, `COM3`, `/dev/cu.wchusbserial…`) |
+
+3. Click **Upload** (→). Then open the **Serial Monitor** at **115200** baud.
+
+### Option 3: PlatformIO (CLI or VS Code)
+
+```bash
 cd firmware
-pio run                       # build (the first run downloads the ESP32 toolchain, ~5 min)
-pio run -t upload             # flash over USB-C (auto-detects /dev/ttyUSB0)
-pio device monitor            # serial console, 115200 baud (Ctrl+C to quit)
+pio run                        # build (first run downloads the toolchain)
+pio run -t upload              # flash over USB
+pio device monitor             # serial console at 115200, with ESP32 exception decoding
 ```
 
-On Linux, if the upload fails with "permission denied" on `/dev/ttyUSB0`:
+In VS Code, install the *PlatformIO IDE* extension, open the `firmware/` folder, and use the Build / Upload / Serial Monitor buttons in
+the status bar. `platformio.ini` pins the platform and library versions, so builds are reproducible.
+
+## First boot
+
+1. The blue LED blinks once. The serial console prints the firmware version and how many codes are saved.
+2. With no Wi-Fi saved, the board opens an access point called **`ESP32-IR-Setup`**:
+   * Join it from a phone. The setup page opens by itself; if not, browse to `http://192.168.4.1`.
+   * Pick your 2.4 GHz network and enter its password.
+3. The board joins your network and serves the UI at **http://irblaster.local**. Android does not resolve
+   `.local` names; use the IP address printed on the serial console or shown in your router.
+
+IR learning and the USER button work even before Wi-Fi is configured.
+
+## Using it
+
+### Web UI
+* **Learn:** type a name (e.g. `tv_power`) and press *Learn*. Point the remote at the TSOP from 5–30 cm and
+  press the key within 15 s. The blue LED blinks fast while waiting.
+* **Send / Rename / Delete** each saved code from its card.
+* **Export / Import:** back up or restore all codes as JSON.
+
+### USER button (IO13)
+
+| Press | Action |
+|---|---|
+| tap | send the code named `button` (or the first saved code) |
+| hold 1–5 s | learn a new `button` code |
+| hold > 5 s | forget Wi-Fi and reboot into the setup portal |
+
+### Serial console (115200 baud)
+
+| Command | Action |
+|---|---|
+| `list` | list saved codes |
+| `send <name>` | transmit a code |
+| `learn <name>` | learn a code (15 s window) |
+| `del <name>` | delete a code |
+| `dump` | toggle sniffer mode: print every received frame as C source |
+| `wifi-reset` | forget Wi-Fi and reboot |
+
+### REST API
+
+All responses are JSON. Actions return `{"ok": true|false, "msg": "..."}`.
+
+| Method | Path | Body / query | Notes |
+|---|---|---|---|
+| GET | `/api/codes` | | array of saved codes |
+| GET | `/api/status` | | version, IP, RSSI, uptime, heap, learn state, last received frame |
+| POST | `/api/learn` | `?name=` | start a 15 s learn window |
+| POST | `/api/send` | `?name=` | send a saved code |
+| POST | `/api/send` | JSON code object | send an ad-hoc code without saving |
+| POST | `/api/rename` | `?from=&to=` | |
+| POST | `/api/delete` | `?name=` | |
+| GET | `/api/export` | | download all codes |
+| POST | `/api/import` | JSON array | merge codes (same name = replace) |
+| POST | `/api/wifi-reset` | | forget Wi-Fi, reboot |
 
 ```bash
-sudo usermod -aG dialout $USER
+curl -X POST "http://irblaster.local/api/learn?name=tv_power"
+curl -X POST "http://irblaster.local/api/send?name=tv_power"
+curl -X POST http://irblaster.local/api/send -d '{"protocol":"NEC","bits":32,"value":"20DF10EF"}'
+curl http://irblaster.local/api/export -o ir_codes.json
 ```
 
-Then log out and back in. Ubuntu's `brltty` package can also grab CH340 adapters. If the port keeps
-disappearing, remove it with `sudo apt remove brltty`.
+Saved code format (one object per code in `/codes.json`):
 
-### Option B: VS Code + PlatformIO extension
-
-1. Install VS Code and the **PlatformIO IDE** extension.
-2. In VS Code, use *File → Open Folder* and pick `firmware/`.
-3. Click ✓ (Build), then → (Upload), then the plug icon (Serial Monitor).
-
-### Option C: Arduino IDE 2
-
-1. Go to *Boards Manager* and install **esp32 by Espressif, version 2.0.17**. The 3.x cores are not yet
-   supported by IRremoteESP8266 2.8.6.
-2. Go to *Library Manager* and install **IRremoteESP8266 2.8.6**, **ArduinoJson 7.x** and **WiFiManager 2.0.17**
-   (tzapu).
-3. Create a sketch folder `esp32_ir/`:
-   * Copy `src/main.cpp` to `esp32_ir/esp32_ir.ino`.
-   * Copy `config.h` and `web_ui.h` next to it.
-4. Set *Tools*:
-   * Board: **ESP32 Dev Module**
-   * Partition scheme: **Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS)**
-   * Upload speed: 921600
-5. Upload.
-
-### If auto-reset ever fails (manual bootloader mode)
-
-1. Hold **BOOT** and tap **RESET**.
-2. Release **BOOT**.
-3. Upload.
-4. Press **RESET** when it finishes.
-
-This also works through the J3 UART header with an external 3.3 V USB-serial adapter. Wire:
-
-| J3 | Adapter |
-|---|---|
-| TX | RX |
-| RX | TX |
-| GND | GND |
-
-Don't power the board from the adapter's 5 V and USB-C at the same time.
-
-## 2. First start: connect it to Wi-Fi
-
-1. Power the board. The blue LED blinks once.
-2. On your phone, join the open Wi-Fi network **ESP32-IR-Setup**. A setup page opens; if it doesn't, browse to
-   `http://192.168.4.1`.
-3. Choose your home Wi-Fi (2.4 GHz only), enter the password and save.
-4. The board joins your network. Open **http://irblaster.local**, or the IP address printed on the serial
-   console. On Android, mDNS (`.local`) may not work, so use the IP.
-
-To change networks later:
-* hold the USER button for 5 s,
-* press "Reset Wi-Fi" on the web page, or
-* type `wifi-reset` in the serial console.
-
-## 3. Use it
-
-**Web page:**
-* Type a name (e.g. `tv_power`) and press **Learn**.
-* Point the remote at the black TSOP receiver from about 5–30 cm and press the key. The blue LED blinks fast
-  while it waits (15 s), then stays on briefly when the code is saved.
-* Use **Send**, **Rename** and **✕** on the saved codes. **Export** and **Import** back them up as JSON.
-
-**USER button (IO13):**
-
-| Action | Effect |
-|---|---|
-| Tap | Send the code named `button` (or the first saved code) |
-| Hold 1–5 s | Learn a new `button` code |
-| Hold 5 s | Forget Wi-Fi and reboot into the setup portal |
-
-**Serial console (115200):**
-
-| Command | Effect |
-|---|---|
-| `list` | List saved codes |
-| `send tv_power` | Send a code |
-| `learn tv_power` | Learn a code |
-| `del tv_power` | Delete a code |
-| `dump` | Print every received code as C source (sniffer mode) |
-| `wifi-reset` | Forget Wi-Fi |
-
-**REST API (JSON):**
-
-```bash
-curl http://irblaster.local/api/codes                                    # list
-curl -X POST "http://irblaster.local/api/learn?name=tv_power"             # start learning (15 s)
-curl http://irblaster.local/api/status                                    # learning state, last code, Wi-Fi
-curl -X POST "http://irblaster.local/api/send?name=tv_power"              # send a saved code
-curl -X POST http://irblaster.local/api/send -d '{"protocol":"NEC","bits":32,"value":"20DF10EF"}'  # ad-hoc
-curl -X POST "http://irblaster.local/api/rename?from=tv_power&to=tv"
-curl -X POST "http://irblaster.local/api/delete?name=tv"
-curl http://irblaster.local/api/export -o ir_codes.json                   # backup
-curl -X POST http://irblaster.local/api/import --data-binary @ir_codes.json
+```jsonc
+{"name":"tv_power","protocol":"NEC","bits":32,"value":"20DF10EF"}         // value protocols (≤64 bit)
+{"name":"ac_cool","protocol":"DAIKIN","bits":280,"state":"11DA2700..."}   // A/C state protocols
+{"name":"fan","protocol":"UNKNOWN","freq":38,"raw":[9000,4500,560,...]}    // raw marks/spaces in µs
 ```
 
-**Home Assistant** (`configuration.yaml`):
+Add `"repeat": n` to a value code to send it with `n` repeats (useful for Sony and some RC5/RC6 devices).
+
+### Home Assistant
 
 ```yaml
+# configuration.yaml
 rest_command:
   tv_power:
     url: "http://irblaster.local/api/send?name=tv_power"
     method: POST
 ```
 
-## 4. Update over Wi-Fi (OTA)
+Call `rest_command.tv_power` from a script, an automation or a dashboard button.
 
-After the first USB flash:
+## OTA updates
 
-```bash
-pio run -t upload --upload-port irblaster.local
-```
+After the first USB flash, the board accepts updates over Wi-Fi:
 
-On the Arduino IDE, pick the network port `irblaster`.
+* **PlatformIO:** `pio run -t upload --upload-port irblaster.local`
+* **Arduino IDE:** *Tools → Port* → the network port `irblaster at <ip>`, then Upload.
 
-## 5. Tips and troubleshooting
+Saved codes are kept: they live in the filesystem partition, which OTA does not touch.
 
-* **Range.** The two TSAL6200 run at about 100 mA (pulsed), which reaches roughly 8–10 m with a direct line
-  of sight. Aim the LEDs at the device, or bend them up toward the ceiling to reflect around a room.
-* **A/C remotes** send the full state (mode, temperature, fan) in every press. Learn one code per setting you
-  need, e.g. `ac_cool_24`, `ac_off`.
-* **A code learns but the device ignores it.**
-  * Learn it again holding the remote closer, and press briefly.
-  * Some remotes (Sony, RC5/RC6) need repeats or toggle bits. Use the API with `"repeat": 2`.
-* **Nothing is received.**
-  * Run `dump` in the serial console and press keys. If nothing prints, check the TSOP38238 orientation
-    (dome facing out) and that IR_VS has 3.3 V.
-  * Most remotes are 38 kHz. A few are 36 or 56 kHz; use the matching TSOP variant (see
-    [docs/COMPONENTS.md](../docs/COMPONENTS.md)).
-* **Check the IR LEDs are firing.** Look at them through a phone camera while sending; most phone cameras show
-  IR as a purple flash. Front cameras usually work better.
-* **Partition scheme.** `min_spiffs.csv` gives two 1.9 MB app slots (needed for OTA) and a 190 kB filesystem.
-  That is about 300 decoded codes, or fewer large raw/A/C ones.
+## Configuration
 
-## Libraries
+Edit `esp32_ir_blaster/config.h`:
 
-* [IRremoteESP8266](https://github.com/crankyoldgit/IRremoteESP8266) 2.8.6 (LGPL-2.1)
-* [ArduinoJson](https://arduinojson.org) 7.2.1 (MIT)
-* [WiFiManager](https://github.com/tzapu/WiFiManager) 2.0.17 (MIT)
+| Constant | Default | Meaning |
+|---|---|---|
+| `HOSTNAME` | `irblaster` | mDNS name and OTA host |
+| `SETUP_AP` | `ESP32-IR-Setup` | setup portal SSID |
+| `IR_CAPTURE_BUF` | 1024 | raw capture buffer (raise for very long A/C frames) |
+| `IR_TIMEOUT_MS` | 50 | gap that ends a frame |
+| `IR_TOLERANCE` | 25 | % timing tolerance when decoding |
+| `LEARN_TIMEOUT_MS` | 15000 | learn window |
 
-All three are fetched automatically by PlatformIO (`platformio.ini`).
+Debugging and common problems are covered in [docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md).
+
+## Dependencies
+
+| Library | Version | License |
+|---|---|---|
+| [IRremoteESP8266](https://github.com/crankyoldgit/IRremoteESP8266) | 2.8.6 | LGPL-2.1 |
+| [ArduinoJson](https://arduinojson.org) | 7.2.1 | MIT |
+| [WiFiManager](https://github.com/tzapu/WiFiManager) | 2.0.17 | MIT |
+| Arduino-ESP32 core | 2.0.17 (PlatformIO `espressif32@6.9.0`) | LGPL-2.1 |
