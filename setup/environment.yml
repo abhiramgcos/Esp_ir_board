@@ -1,0 +1,17 @@
+# Optional conda env for the tools that do NOT need KiCad's pcbnew module
+# (tools/gerber_connectivity.py, image viewers). pcbnew is compiled against the
+# system python, so the KiCad generators (gen/pcb.py, router.py, zones.py, silk.py,
+# drc.py) must run from the .venv created by setup/install.sh instead.
+name: esp-ir
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - pillow
+  - scikit-image
+  - pip
+  - pip:
+      - kiutils>=1.4.8,<1.5
+      - pygerber>=2.4,<2.5

@@ -12,6 +12,17 @@ The board is designed for **hand soldering first**, and can also be ordered **as
 > New here? Read [docs/BUILD_LOG.md](docs/BUILD_LOG.md). It walks through every build step with screenshots,
 > and each step is a separate commit.
 
+## Quick start on your computer
+
+```bash
+mkdir -p ~/Desktop/projects && cd ~/Desktop/projects
+git clone https://github.com/abhiramgcos/Esp_ir_board.git && cd Esp_ir_board
+./setup/install.sh          # KiCad, gerbv, rsvg + .venv (asks for sudo); add --conda for a conda env too
+make help                   # open | sch | pcb | 3d | gerbers | render | check | bom | fab | rebuild
+```
+
+See [setup/README.md](setup/README.md) and [scripts/README.md](scripts/README.md).
+
 ## Block diagram
 
 ```mermaid

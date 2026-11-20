@@ -1,0 +1,8 @@
+# Python packages for gen/ (schematic/PCB generators, router) and tools/ (Gerber checker).
+# pcbnew is NOT here: it ships with KiCad and is only importable from the system python.
+kiutils>=1.4.8,<1.5
+numpy>=1.26
+scipy>=1.11
+pillow>=10.0
+scikit-image>=0.22
+pygerber>=2.4,<2.5        # tools/gerber_connectivity.py uses the 2.x API (pygerber.gerberx3.api.v2)
