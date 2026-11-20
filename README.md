@@ -1,27 +1,73 @@
-# ESP32 IR Blaster / Receiver: v2
+# ESP32 IR Blaster / Receiver: v2.1
 
-ESP32 board that learns and sends infrared remote codes. It plugs into USB-C and flashes with one click,
-drives two IR LEDs for room-wide range, and has a 38 kHz receiver, buttons, LEDs and a 14-pin expansion header.
-The board is designed for **hand soldering first**, and can also be ordered **assembled from JLCPCB**
-(BOM and pick-and-place files included).
+An ESP32 board that **learns and sends infrared remote codes** over Wi-Fi. It plugs into USB-C and flashes with
+one click. Two IR LEDs give it room-wide range, and it has a 38 kHz receiver, buttons, LEDs and a 14-pin
+expansion header.
 
-| Top | Back (as you hold it) |
+* Designed for **hand soldering first**, and can also be ordered **assembled from JLCPCB or PCBWay**.
+* Ships with **complete firmware**: web UI, REST API, learn/save/send, OTA updates.
+
+![3D render, top](docs/img/v2.1_3d_top_iso.png)
+
+> **These are 3D renders, not photos.** No v2.1 hardware has been built yet. They come from the real KiCad
+> board file with `kicad-cli pcb render`, using KiCad's official 3D models. Two models are stand-ins:
+> * The USB-C connector uses the GCT USB4105 model; the HRO part has no stock model but the same shape.
+> * The 5 mm IR LEDs show as red generic LEDs; the real TSAL6200 is clear/blue.
+
+| Top | Bottom |
 |---|---|
-| ![top](docs/img/v2_top_silk.png) | ![back](docs/img/v2_bottom_view.png) |
+| ![top](docs/img/v2.1_3d_top.png) | ![bottom iso](docs/img/v2.1_3d_bottom_iso.png) |
+| **Top silkscreen + copper** | **Back (as you hold it)**: title, GPIO map, passives table, robot |
+| ![top silk](docs/img/v2.1_top_silk.png) | ![back](docs/img/v2.1_bottom_view.png) |
 
-> New here? Read [docs/BUILD_LOG.md](docs/BUILD_LOG.md). It walks through every build step with screenshots,
-> and each step is a separate commit.
+## Guides
 
-## Quick start on your computer
+| I want to… | Read |
+|---|---|
+| **Order the PCB** (bare or assembled) from JLCPCB / PCBWay | [docs/ORDERING.md](docs/ORDERING.md) |
+| Know **every component**, what it does, and **which substitutes are safe** | [docs/COMPONENTS.md](docs/COMPONENTS.md) |
+| **Flash the firmware** and use the board (web UI, API, button, Home Assistant) | [firmware/README.md](firmware/README.md) |
+| See how the board was built, step by step with screenshots | [docs/BUILD_LOG.md](docs/BUILD_LOG.md) |
+| Set up the KiCad / Python toolchain on Linux | [setup/README.md](setup/README.md) |
+
+## Quick start
+
+**Build and verify the hardware files:**
 
 ```bash
 mkdir -p ~/Desktop/projects && cd ~/Desktop/projects
 git clone https://github.com/abhiramgcos/Esp_ir_board.git && cd Esp_ir_board
 ./setup/install.sh          # KiCad, gerbv, rsvg + .venv (asks for sudo); add --conda for a conda env too
-make help                   # open | sch | pcb | 3d | gerbers | render | check | bom | fab | rebuild
+source .venv/bin/activate
+make check                  # ERC + DRC + independent Gerber connectivity check
+make help                   # open | sch | pcb | 3d | render3d | gerbers | render | check | bom | fab | rebuild
 ```
 
-See [setup/README.md](setup/README.md) and [scripts/README.md](scripts/README.md).
+**Flash the firmware** (board plugged in over USB-C):
+
+```bash
+pip install platformio
+cd firmware && pio run -t upload && pio device monitor
+```
+
+Then join the Wi-Fi network **ESP32-IR-Setup**, pick your network, and open **http://irblaster.local**.
+
+## v2.0 → v2.1: optimised layout
+
+| | v2.0 | **v2.1** |
+|---|---|---|
+| Board size | 76 × 56 mm (4256 mm²) | **68 × 48 mm (3264 mm²), −23 %** |
+| Track length | 1733 mm | **1624 mm (−6 %)** |
+| Vias (signal + GND stitching) | 220 | **201** |
+| Routing | 90° maze routing | **45° (octilinear) routing**, power nets first, rip-up and retry |
+| ESP32 antenna | board-edge overhang | overhang **plus a copper/track/via keep-out strip** on both layers |
+| USB-C | normal clearances | dedicated fine-pitch rules: 0.15 mm D+/D−/CC tracks, VBUS exits its pad straight |
+| Silkscreen | positions hard-coded | placed automatically from the outline and footprints; no silk on pads, no overlaps |
+| 3D models | box fallbacks | real ESP32-WROOM-32E model, USB-C stand-in, official KiCad renders |
+| Toolchain | KiCad 7 | **KiCad 9** (generators still run on 7) |
+| Firmware | snippet only | **full firmware** in [`firmware/`](firmware) |
+
+The circuit is unchanged from v2.0: same parts, same nets, same pin map.
 
 ## Block diagram
 
@@ -43,29 +89,14 @@ flowchart LR
   ESP --- HDR[UART header + 14-pin expansion]
 ```
 
-Full schematic: [hardware/docs/esp_ir_board_schematic.pdf](hardware/docs/esp_ir_board_schematic.pdf)
-
-## What changed from v1
-
-v1 was reviewed from its fab files ([docs/v1-review.md](docs/v1-review.md)). Every issue is fixed:
-
-| v1 problem | v2 |
-|---|---|
-| LD1117 needs ~1.2 V headroom; it browns out after the input diode | **AP2112K-3.3** (0.25 V dropout) |
-| 100 nF on the regulator input only | 22 µF + 1 µF on VIN, 10 µF + 22 µF + 100 nF on 3V3 |
-| IR LED ≈20 mA from 3.3 V (short range) | **2 LEDs in series from VIN at ≈100 mA**, MOSFET switched |
-| IR receiver missing from the BOM | **TSOP38238 on board**, in the BOM |
-| Needs an external USB-UART adapter | **CH340C + auto-reset**: flash straight from the Arduino IDE / PlatformIO |
-| No protection | USB ESD diode, resettable fuse, reverse-safe diode-OR of USB and EXT 5V |
-| Mounting holes in the BOM, one part on the bottom, 0.2 mm vias | Holes excluded, all parts on top, 0.3 mm vias |
-| No part numbers, rev "rev?" | MPN + LCSC columns, rev 2.0 |
-| No I²C pull-ups | 4.7 k on SDA/SCL |
+* Full schematic: [hardware/docs/esp_ir_board_schematic.pdf](hardware/docs/esp_ir_board_schematic.pdf)
+* PNG version: [docs/img/v2.1_schematic.png](docs/img/v2.1_schematic.png)
 
 ## Pinout
 
 | Function | GPIO | Notes |
 |---|---|---|
-| IR transmit | **IO4** | High = LEDs on. Use RMT/IRremote at 38 kHz |
+| IR transmit | **IO4** | High = LEDs on, 38 kHz carrier generated in software (IRremoteESP8266) |
 | IR receive | **IO16** | Active-low TSOP output |
 | User LED (blue) | **IO2** | Strapping pin; the LED keeps it low at boot, which is correct |
 | User button | **IO13** | Active-low, 10 k pull-up |
@@ -73,17 +104,21 @@ v1 was reviewed from its fab files ([docs/v1-review.md](docs/v1-review.md)). Eve
 | UART0 | IO1 TX / IO3 RX | Also on J3 for an external adapter (it overrides the CH340 through 1 k) |
 | Expansion J4 | VIN, 3V3, GND, SDA, SCL, IO18, 19, 23, 25, 26, 32, 33, 34, 35 | IO34/35 are input-only |
 
-Arduino quick start:
+## Firmware in one paragraph
 
-```cpp
-#include <IRremote.hpp>
-void setup() {
-  IrReceiver.begin(16);      // TSOP38238
-  IrSender.begin(4);         // 2x TSAL6200 via AO3400A
-  pinMode(2, OUTPUT);        // blue LED
-  pinMode(13, INPUT_PULLUP); // USER button
-}
-```
+[`firmware/`](firmware) is a PlatformIO project. It uses IRremoteESP8266 2.8.6, ArduinoJson 7 and WiFiManager.
+
+* **Learn:** decodes NEC, Sony, RC5/6, Samsung, LG, Panasonic and many A/C protocols; anything else is stored
+  as raw timings.
+* **Store:** saves named codes in flash and replays them through the IR LEDs.
+* **Control:** a mobile-friendly web page, a JSON REST API, the serial console, and the USER button:
+  * tap = send,
+  * hold 1 s = learn,
+  * hold 5 s = reset Wi-Fi.
+* **Update:** over the air after the first USB flash.
+
+It compiles to 1.08 MB of flash (55 % of the OTA slot) and 50 kB of static RAM. See
+[firmware/README.md](firmware/README.md).
 
 ## Power budget
 
@@ -93,64 +128,68 @@ void setup() {
   carrier is on. That's within the TSAL6200 rating for pulsed use.
 * **EXT 5V and USB together:** you can connect both. The diode-OR feeds the board from whichever is higher.
 
-## Hand-soldering guide
+## Hand-soldering guide (short version)
 
-Every SMD footprint uses KiCad's "HandSolder" pads: 0805/1206 passives, SOIC-16, SOT-23 and SMA. The back
-silkscreen has a **value table**, so you don't need a laptop at the bench.
+Every SMD footprint uses KiCad's "HandSolder" pads, and the back silkscreen has a **value table**. The full
+part list, substitutes and power-up checks are in [docs/COMPONENTS.md](docs/COMPONENTS.md).
 
-1. **USB-C (J1).** Do this first, while the area is open. Tin the pads, add flux, then drag-solder.
-   Check A6/A7/B6/B7 for bridges with a magnifier.
-2. **U3 ESD, U4 CH340C, U2 LDO, Q1–Q3.**
-3. **0805 passives and LEDs.** Green D5 is power and blue D6 is IO2; the cathode mark goes toward the line on
-   the silkscreen.
-4. **1206 parts (C1, C5, C10, R10, F1) and the SS14 diodes (D1, D2).** The diode band goes to the "K" side.
-5. **Smoke test.** Plug in USB. You should see 3.3 V across C3 and the PWR LED lit. The PC should show a
-   CH340 serial port.
-6. **ESP32 module (U1).** Tack two corners and solder the castellations. Then heat the thermal pad from the
-   back through the via field and feed in a little solder.
-7. **Through-hole parts:**
+1. **USB-C (J1).** Tin, flux, drag-solder. Check A6/A7/B6/B7 for bridges.
+2. **U3 ESD, U4 CH340C, U2 LDO, Q1–Q3**, then the 0805/1206 passives, LEDs, SS14 diodes and fuse.
+3. **Smoke test.** Plug in USB. You should see 3.3 V on C3, the PWR LED lit, and a CH340 serial port on the PC.
+4. **ESP32 module (U1).** Tack two corners, solder the castellations, then heat the thermal pad from the back
+   through the via field.
+5. **Through-hole parts:**
    * Headers, then the buttons.
-   * **IR LEDs:** the short leg / flat side goes in the **square pad**. Bend them 90° to face out of the right edge.
-   * **TSOP38238:** pin 1 (OUT) goes in the square pad, dome facing outward.
+   * **IR LEDs:** the flat side / short leg goes in the **square pad**.
+   * **TSOP38238:** OUT goes in the square pad, dome facing outward.
 
-## Ordering
-
-| File | Use |
-|---|---|
-| `fab/esp_ir_board_v2_gerbers.zip` | Upload to JLCPCB / PCBWay: 2 layers, 1.6 mm, HASL or ENIG, any colour |
-| `fab/BOM_JLCPCB.csv` + `fab/CPL_JLCPCB.csv` | JLC SMT assembly (SMD parts only; through-hole parts are hand-soldered) |
-| `fab/BOM_full.csv` | Everything, with MPNs, for LCSC / Mouser / local shops |
-| `hardware/docs/assembly_top.pdf` | Printable placement drawing |
-
-Before you order:
-
-* **LCSC numbers** are filled in only for common parts. Check stock, and add part numbers for the ESP32,
-  TSOP, TSAL6200, PTC fuse and LEDs, before using JLC assembly.
-* **Rotations:** JLC rotations sometimes need a 90/180° fix. Check their placement preview.
-* **ESP32 antenna:** it overhangs the top edge by ≈5.5 mm on purpose, which is best for Wi-Fi. Leave room in
-  the enclosure.
-
-## Verification
+## Verification (v2.1, KiCad 9.0.8)
 
 | Check | Result |
 |---|---|
 | Schematic netlist vs design (`gen/erc.py`) | 162 pins, 41 nets, 0 problems |
-| KiCad DRC (`gen/drc.py`) | 0 clearance / unconnected / hole / dangling errors (silk-near-edge warnings only) |
+| KiCad ERC (`kicad-cli sch erc`) | 0 errors |
+| KiCad DRC (`kicad-cli pcb drc --schematic-parity`) | **0 errors, 0 unconnected**. Warnings only: silk clipped at the edge where the ESP32 and USB-C overhang on purpose, and net-name prefix notes (`VIN` vs `/VIN`). |
 | Independent Gerber copper check (`tools/gerber_connectivity.py`) | 41 nets, 0 shorts, 0 opens, 162/162 pins on the right net |
+| Firmware build (`pio run`) | success, no warnings in project code |
+
+Run them all with `make check`.
+
+**Not verified:** the board has not been manufactured or powered yet, and the firmware has not run on real
+hardware. The first build is the real test.
+
+## Before you order
+
+* **LCSC numbers** are filled in only for common parts. Pick the ESP32, TSOP, TSAL6200, PTC fuse and LEDs in
+  JLC's BOM tool ([docs/ORDERING.md](docs/ORDERING.md) §A2).
+* **Rotations:** check JLC's placement preview for every IC, diode and LED.
+* **ESP32 antenna:** it overhangs the top edge by ≈5.5 mm on purpose, which is best for Wi-Fi. Leave room in
+  the enclosure.
 
 ## Repository layout
 
 ```
-hardware/     KiCad project (.kicad_pro/.kicad_sch/.kicad_pcb/.kicad_dru) + PDFs
-fab/          Gerbers, drills, BOMs, CPL, zip
+hardware/     KiCad project (.kicad_pro/.kicad_sch/.kicad_pcb/.kicad_dru) + PDFs  <- v2.1
+fab/          Gerbers, drills, BOMs, CPL, zip (make fab)
+firmware/     PlatformIO firmware: learn / store / send IR, web UI, REST API, OTA
 gen/          Python generators: circuit.py (single source of truth), placement, router, silkscreen, BOM
-tools/        Gerber connectivity checker used on v1 and v2
-docs/         Build log, v1 review, images
+tools/        Gerber connectivity checker, offscreen 3D renderer
+scripts/      esp.sh (make targets), silk_preview.sh
+docs/         Ordering, components, build log, v1 review, images
 v1/fab/       Original v1 fab package, for reference
 ```
 
-**Edit and rebuild.** You can open `hardware/esp_ir_board.kicad_pro` in KiCad 7 or newer (including 10) and
-edit it there. Or change `gen/circuit.py` / `gen/placement.py` and run `gen/build.sh`.
+**Edit and rebuild.** Open `hardware/esp_ir_board.kicad_pro` in KiCad 7 or newer and edit it there. Or change
+`gen/circuit.py` / `gen/placement.py` and run `gen/build.sh` (about 5 min; writes to `build/`, never
+`hardware/`).
 
 **About the routing.** It was produced by the small maze router in `gen/router.py`. It passes DRC, but it is
-not hand-polished: some traces run at odd angles. Feel free to tidy it in KiCad. The rules stay in the project.
+not hand-polished. Feel free to tidy it in KiCad; the rules stay in the project.
+
+## History
+
+* **v1:** original board, reviewed from its Gerbers ([docs/v1-review.md](docs/v1-review.md)).
+* **v2.0:** full redesign fixing all 10 v1 issues: AP2112K LDO, 100 mA IR drive, on-board TSOP, CH340C +
+  auto-reset, ESD/fuse/diode-OR, I²C pull-ups. Tag/branch `main` before v2.1.
+* **v2.1:** this version. Same circuit, 23 % smaller, 45° routing, antenna keep-out, KiCad 9, 3D renders,
+  firmware and guides.

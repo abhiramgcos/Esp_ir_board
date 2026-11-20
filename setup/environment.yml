@@ -15,3 +15,8 @@ dependencies:
   - pip:
       - kiutils>=1.4.8,<1.5
       - pygerber>=2.4,<2.5
+      - trimesh>=4.0
+      - shapely>=2.0
+      - mapbox_earcut>=1.0
+      - pyrender==0.1.45
+      - PyOpenGL==3.1.7

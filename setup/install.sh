@@ -117,6 +117,7 @@ setup_venv() {
   else ok ".venv already exists - updating"; fi
   .venv/bin/python -m pip install -q --upgrade pip
   .venv/bin/python -m pip install -q -r setup/requirements.txt
+  .venv/bin/python -m pip install -q --no-deps pyrender==0.1.45   # its PyOpenGL==3.1.0 pin conflicts
   ok "Installed setup/requirements.txt"
   if .venv/bin/python -c "import pcbnew" 2>/dev/null; then
     ok "pcbnew $(.venv/bin/python -c 'import pcbnew; print(pcbnew.Version())') importable"

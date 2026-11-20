@@ -10,6 +10,19 @@ from circuit import comps
 from placement import PLACE, BOARD, HOLES, NETCLASS_POWER
 
 SCH, OUT = sys.argv[1], sys.argv[2]
+# 3D models for footprints whose stock model is missing or not the real part (used by kicad-cli pcb render)
+MODEL_OVERRIDE = {
+    'U1': '${KICAD9_3DMODEL_DIR}/RF_Module.3dshapes/ESP32-WROOM-32E.step',   # real part is the -32E
+    # no stock model for HRO TYPE-C-31-M-12: GCT USB4105 is the same 16-pin top-mount horizontal style
+    'J1': '${KICAD9_3DMODEL_DIR}/Connector_USB.3dshapes/USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal.step',
+}
+def set_model(fp, path):
+    ms = fp.Models()
+    m = ms[0] if len(ms) else pcbnew.FP_3DMODEL()
+    m.m_Filename = path
+    if not len(ms):
+        ms.append(m)
+
 FPDIR = '/usr/share/kicad/footprints'
 mm = pcbnew.FromMM
 V = lambda x, y: pcbnew.VECTOR2I(mm(x), mm(y))
@@ -39,6 +52,7 @@ for c in comps:
     lib, name = c['fp'].split(':')
     fp = pcbnew.FootprintLoad(f'{FPDIR}/{lib}.pretty', name)
     assert fp, c['fp']
+    fp.SetFPID(pcbnew.LIB_ID(lib, name))     # keep the library nickname (schematic parity)
     fp.SetReference(c['ref'])
     fp.SetValue(c['value'])
     fp.SetPath(pcbnew.KIID_PATH('/' + sym_uuid[c['ref']]))
@@ -48,9 +62,16 @@ for c in comps:
         fp.Flip(fp.GetPosition(), False)
     fp.SetPosition(V(x, y))
     fp.SetOrientationDegrees(r)
+    if c['ref'] in MODEL_OVERRIDE:
+        set_model(fp, MODEL_OVERRIDE[c['ref']])
     for k, v in (('MPN', c['mpn']), ('LCSC', c['lcsc'])):
         if v:
-            fp.SetProperty(k, v)
+            if hasattr(fp, 'SetProperty'):          # KiCad 7
+                fp.SetProperty(k, v)
+            else:                                   # KiCad 8+: hidden footprint field
+                f = pcbnew.PCB_FIELD(fp, fp.GetNextFieldId(), k)
+                f.SetText(v); f.SetVisible(False); f.SetLayer(pcbnew.F_Fab)
+                fp.AddField(f)
     if c['lib'].startswith('Mechanical'):
         fp.SetAttributes(fp.GetAttributes() | pcbnew.FP_EXCLUDE_FROM_BOM | pcbnew.FP_EXCLUDE_FROM_POS_FILES)
     for pad in fp.Pads():

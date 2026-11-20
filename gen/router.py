@@ -22,7 +22,7 @@ G = 0.05                     # grid mm
 CLR = 0.2                    # copper clearance
 EDGE = 0.45                  # copper-to-edge
 VIA_D, VIA_DRILL = 0.6, 0.3
-VIA_COST = 40                # in grid steps (~2 mm of track)
+VIA_COST = 60                # in grid steps (~3 mm of track): fewer vias
 W_SIG, W_PWR, W_FINE = 0.25, 0.5, 0.2
 FINE = {'USB_DP', 'USB_DN', 'CC1', 'CC2'}
 W_FINE = 0.15
@@ -56,6 +56,24 @@ class Router:
         self.base = [self._blank() for _ in LAYERS]   # static copper (pads, keepout, edge)
         self.pads = {}                                  # net -> list of pad dicts
         self._draw_static()
+        # cells within 1.0 mm of a USB-C signal pad: the only place the tight margin is allowed
+        fz = Image.new('L', (NX, NY), 0); dz = ImageDraw.Draw(fz)
+        for fp in self.b.GetFootprints():
+            if fp.GetReference() == 'J1':
+                for pad in fp.Pads():
+                    if pad.GetAttribute() == pcbnew.PAD_ATTRIB_SMD:
+                        p = to_px(ToMM(pad.GetPosition().x), ToMM(pad.GetPosition().y)); r = 1.0 / G
+                        dz.ellipse([p[0] - r, p[1] - r, p[0] + r, p[1] + r], fill=1)
+        self.fine_zone = np.array(fz, dtype=bool)
+        # via drill must keep >= 0.25 mm hole-to-hole from every drilled hole, whatever its net
+        hz = Image.new('L', (NX, NY), 0); dh = ImageDraw.Draw(hz)
+        for fp in self.b.GetFootprints():
+            for pad in fp.Pads():
+                if pad.GetDrillSize().x > 0:
+                    p = to_px(ToMM(pad.GetPosition().x), ToMM(pad.GetPosition().y))
+                    r = (ToMM(max(pad.GetDrillSize().x, pad.GetDrillSize().y)) / 2 + 0.25 + VIA_DRILL / 2 + 0.03) / G
+                    dh.ellipse([p[0] - r, p[1] - r, p[0] + r, p[1] + r], fill=1)
+        self.hole_ok = ~np.array(hz, dtype=bool)
         self.tracks = {}   # net -> list of (layer_idx, [(x,y)...]) polylines in mm
         self.vias = {}     # net -> list of (x,y)
 
@@ -146,9 +164,11 @@ class Router:
         for o in own:
             foreign = (o != -1) & (o != code)
             dist.append(ndimage.distance_transform_edt(~foreign) * G)
-        mg = 0.025 if net in FINE or net in SPECIAL else 0.06
-        free = [d >= w / 2 + CLR + mg for d in dist]
-        via_ok = (dist[0] >= VIA_D / 2 + CLR + 0.06) & (dist[1] >= VIA_D / 2 + CLR + 0.06)
+        # tight margin only right at the 0.5 mm-pitch USB-C pins; normal margin everywhere else
+        free = [d >= w / 2 + CLR + 0.06 for d in dist]
+        if net in FINE:      # VBUS (SPECIAL) keeps the normal margin: it can exit its pad straight
+            free = [f | ((d >= w / 2 + CLR + 0.025) & self.fine_zone) for f, d in zip(free, dist)]
+        via_ok = (dist[0] >= VIA_D / 2 + CLR + 0.06) & (dist[1] >= VIA_D / 2 + CLR + 0.06) & self.hole_ok
         pads = self.pads[net]
         # pad cells (own copper) per layer
         tree = set()
@@ -256,6 +276,9 @@ class Router:
     @staticmethod
     def _clear(a, b, fm):
         ax, ay = to_px(*a); bx, by = to_px(*b)
+        dx, dy = round(bx - ax), round(by - ay)
+        if not (dx == 0 or dy == 0 or abs(dx) == abs(dy)):
+            return False          # octilinear only: 0/45/90 degree segments
         n = int(max(abs(bx - ax), abs(by - ay)) * 2) + 1
         xs = np.rint(np.linspace(ax, bx, n + 1)).astype(int); ys = np.rint(np.linspace(ay, by, n + 1)).astype(int)
         return bool(fm[ys, xs].all())
@@ -264,9 +287,9 @@ class Router:
         """String pulling: replace runs of grid steps with the longest straight segment that stays in free space."""
         out = [pts[0]]; i = 0; n = len(pts)
         while i < n - 1:
-            j = min(n - 1, i + 600)
+            j = min(n - 1, i + 400)
             while j > i + 1 and not self._clear(pts[i], pts[j], fm):
-                j -= max(1, (j - i) // 8) if j - i > 16 else 1
+                j -= 1
             out.append(pts[j]); i = j
         return out
 
@@ -324,7 +347,7 @@ class Router:
                 break
             print('cleanup removed', removed, flush=True)
 
-    def run(self, order, max_rounds=12):
+    def run(self, order, max_rounds=int(os.environ.get('ROUTER_ROUNDS', 40))):
         order = list(order)
         for rnd in range(max_rounds):
             self.tracks, self.vias = {}, {}
@@ -342,8 +365,14 @@ class Router:
             print(f'round {rnd}: failed {failed} ({time.time() - t0:.0f}s)', flush=True)
             if not failed:
                 return True
-            # rip-up: move failures to the front, keep the rest
-            order = failed + [n for n in order if n not in failed]
+            # rip-up: move failures to the front; after a few rounds, also jitter the rest
+            rest = [n for n in order if n not in failed]
+            if rnd >= 4:
+                rng = random.Random(rnd)
+                for k in range(len(rest) - 1):
+                    if rng.random() < 0.25:
+                        rest[k], rest[k + 1] = rest[k + 1], rest[k]
+            order = failed + rest
         return False
 
     def commit(self, out):
@@ -400,9 +429,9 @@ if __name__ == '__main__':
     def span(n):
         ps = r.pads[n]
         return max(p['x'] for p in ps) - min(p['x'] for p in ps) + max(p['y'] for p in ps) - min(p['y'] for p in ps)
-    # short signal nets first, power after, GND last (pour finishes it)
-    order = sorted([n for n in nets if n not in NETCLASS_POWER], key=span) + \
-            sorted([n for n in nets if n in NETCLASS_POWER and n != 'GND'], key=span) + ['GND']
+    # power first (short, wide, direct), then signals shortest-first, GND last (pours finish it)
+    order = sorted([n for n in nets if n in NETCLASS_POWER and n != 'GND'], key=span) + \
+            sorted([n for n in nets if n not in NETCLASS_POWER], key=span) + ['GND']
     ok = r.run(order)
     r.commit(out)
     print('ROUTED' if ok else 'PARTIAL', out)

@@ -5,6 +5,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 OUT=${1:-../build}
+# use the project venv (pcbnew + deps) when present; conda's python cannot import pcbnew
+[[ -x ../.venv/bin/python3 ]] && export PATH="$(cd .. && pwd)/.venv/bin:$PATH"
 mkdir -p "$OUT"
 python3 sch.py "$OUT/esp_ir_board.kicad_sch"
 kicad-cli sch export netlist --format kicadsexpr -o "$OUT/esp_ir_board.net" "$OUT/esp_ir_board.kicad_sch"

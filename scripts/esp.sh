@@ -51,7 +51,8 @@ ESP32 IR board toolkit  (repo: $ROOT)
   open      KiCad project manager on $PRO
   sch       Schematic editor
   pcb       PCB editor
-  3d        PCB editor + 3D viewer hint; renders PNGs if kicad-cli has 'pcb render' (KiCad 9+)
+  3d        PCB editor + 3D viewer hint; renders PNGs (kicad-cli 'pcb render' on KiCad 9+, else render3d)
+  render3d  offscreen 3D PNGs via tools/render3d.py (top iso, bottom iso, top ortho) -> build/render/
   gerbers   View fab/gerbers in gerbv
   render    Schematic + top/bottom/back-silk PNGs into $RENDER/
   check     ERC (netlist vs design), DRC, independent Gerber connectivity check
@@ -68,6 +69,15 @@ cmd_open() { need kicad; launch kicad "$PRO"; echo "Opening KiCad: $PRO"; }
 cmd_sch()  { need eeschema; launch eeschema "$SCH"; echo "Opening schematic: $SCH"; }
 cmd_pcb()  { need pcbnew; launch pcbnew "$PCB"; echo "Opening PCB: $PCB"; }
 
+cmd_render3d() {
+  mkdir -p "$RENDER"
+  # Optional: point MODELS3D at a folder of KiCad .wrl models (default: KiCad's own 3dmodels dirs)
+  python3 tools/render3d.py "$PCB" "$RENDER" ${MODELS3D:+--models "$MODELS3D"} ${MASK:+--mask "$MASK"} \
+    || { echo "render3d failed - see setup/README.md (3D renders)"; return 1; }
+  echo "3D renders: $RENDER/3d_top_iso.png, $RENDER/3d_bottom_iso.png, $RENDER/3d_top.png"
+  open_dir "$RENDER"
+}
+
 cmd_3d() {
   need kicad-cli
   if has_cli pcb render; then
@@ -77,7 +87,8 @@ cmd_3d() {
     echo "3D renders: $RENDER/3d_top.png, $RENDER/3d_bottom.png"
     open_dir "$RENDER"
   else
-    echo "${c_dim}kicad-cli $(kicad_major) has no 'pcb render' (needs KiCad 9+); skipping PNG renders.${c_off}"
+    echo "${c_dim}kicad-cli $(kicad_major) has no 'pcb render' (KiCad 9+); using tools/render3d.py instead.${c_off}"
+    cmd_render3d
   fi
   if command -v pcbnew >/dev/null; then
     launch pcbnew "$PCB"
@@ -200,7 +211,7 @@ cmd_rebuild() {
 }
 
 case "${1:-help}" in
-  open|sch|pcb|3d|gerbers|render|check|bom|fab|rebuild|help) "cmd_${1:-help}" ;;
+  open|sch|pcb|3d|render3d|gerbers|render|check|bom|fab|rebuild|help) "cmd_${1:-help}" ;;
   -h|--help) cmd_help ;;
   *) echo "Unknown command: $1" >&2; cmd_help; exit 2 ;;
 esac
