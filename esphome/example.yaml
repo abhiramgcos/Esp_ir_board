@@ -1,0 +1,68 @@
+# Your own ESPHome config for the ESP32 IR Blaster. Copy this file into Home Assistant's ESPHome folder
+# (or the ESPHome dashboard: New device -> skip -> Edit, then paste), then change the lines marked  # <- EDIT
+#
+# Wi-Fi password and keys come from secrets.yaml (ESPHome dashboard: top-right menu -> Secrets).
+
+substitutions:
+  name: living-room-ir                 # <- EDIT: hostname, lowercase letters, digits and dashes
+  friendly_name: Living Room IR        # <- EDIT: name shown in Home Assistant
+
+packages:
+  # Board definition (pins, IR, button, LED, sensors, HA actions). Pulled from GitHub:
+  ir_blaster: github://abhiramgcos/Esp_ir_board/esphome/esp32-ir-blaster.yaml@main
+  # Offline alternative: put esp32-ir-blaster.yaml next to this file and use:
+  # ir_blaster: !include esp32-ir-blaster.yaml
+
+wifi:
+  ssid: !secret wifi_ssid              # <- EDIT secrets.yaml
+  password: !secret wifi_password
+  ap:                                  # fallback hotspot if your Wi-Fi is unreachable
+    ssid: "${friendly_name} Fallback"
+
+captive_portal:
+
+api:
+  encryption:
+    key: !secret ir_blaster_api_key    # <- EDIT: generate one at https://esphome.io/components/api#configuration-variables
+
+ota:
+  - platform: esphome
+    password: !secret ota_password     # <- EDIT secrets.yaml
+
+# ---------------------------------------------------------------------------------------------------
+# Your remote's buttons. Learn a code first:
+#   1. Install this config, open the device LOGS (or watch the "Last IR code" sensor in Home Assistant).
+#   2. Point the remote at the board and press a key. Logs show e.g.:
+#        [I][remote.nec:...]: Received NEC: address=0xFB04, command=0xF708
+#   3. Copy the values into a button below, install again. Each button appears in Home Assistant.
+# Replace the example codes (they are LG TV codes) with your own.  # <- EDIT
+button:
+  - platform: template
+    name: "TV Power"
+    icon: mdi:power
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0xFB04
+          command: 0xF708
+  - platform: template
+    name: "TV Volume Up"
+    icon: mdi:volume-plus
+    on_press:
+      - remote_transmitter.transmit_nec:
+          address: 0xFB04
+          command: 0xFD02
+  # A code that only decodes as raw (copy the "Received Raw:" numbers from the log):
+  # - platform: template
+  #   name: "Fan Speed"
+  #   on_press:
+  #     - remote_transmitter.transmit_raw:
+  #         carrier_frequency: 38kHz
+  #         code: [9000, -4500, 560, -560, 560, -1690]
+
+# Air conditioners: ESPHome has ready-made climate entities for many brands (Daikin, Mitsubishi,
+# Toshiba, LG, Fujitsu, Gree, Midea, Coolix, ...). Uncomment the one for your unit:
+# climate:
+#   - platform: coolix          # <- EDIT: your A/C brand, see https://esphome.io/components/climate/climate_ir
+#     name: "Air Conditioner"
+#     transmitter_id: ir_tx
+#     receiver_id: ir_rx        # keeps HA in sync when you use the original remote

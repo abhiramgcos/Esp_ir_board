@@ -1,0 +1,171 @@
+# ESP32 IR Blaster - ESPHome hardware package (board v2.0 / v2.1)
+#
+# Defines the board: pins, IR transmitter/receiver, button, LED, I2C, diagnostics and Home Assistant actions.
+# Do not put Wi-Fi credentials or keys here. Include it from your own config, e.g. esphome/example.yaml:
+#
+#   packages:
+#     ir_blaster: github://abhiramgcos/Esp_ir_board/esphome/esp32-ir-blaster.yaml@main
+#
+# GPIO map: IR TX = GPIO4, IR RX = GPIO16 (active low), LED = GPIO2, USER button = GPIO13 (active low),
+#           I2C SDA/SCL = GPIO21/GPIO22 (4.7k pull-ups on board)
+
+substitutions:
+  name: esp32-ir-blaster
+  friendly_name: ESP32 IR Blaster
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  project:
+    name: abhiramgcos.esp32-ir-blaster
+    version: "2.1.0"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+  # Callable from Home Assistant as esphome.<name>_send_nec etc. (Developer tools -> Actions)
+  actions:
+    - action: send_nec
+      variables:
+        address: int
+        command: int
+      then:
+        - remote_transmitter.transmit_nec:
+            transmitter_id: ir_tx
+            address: !lambda "return address;"
+            command: !lambda "return command;"
+    - action: send_samsung
+      variables:
+        data: int
+      then:
+        - remote_transmitter.transmit_samsung:
+            transmitter_id: ir_tx
+            data: !lambda "return (uint64_t) (uint32_t) data;"
+    - action: send_sony
+      variables:
+        data: int
+        nbits: int
+      then:
+        - remote_transmitter.transmit_sony:
+            transmitter_id: ir_tx
+            data: !lambda "return data;"
+            nbits: !lambda "return nbits;"
+            repeat:
+              times: 3
+              wait_time: 25ms
+    - action: send_pronto
+      variables:
+        data: string
+      then:
+        - remote_transmitter.transmit_pronto:
+            transmitter_id: ir_tx
+            data: !lambda "return data;"
+    - action: send_raw
+      variables:
+        code: int[]
+      then:
+        - remote_transmitter.transmit_raw:
+            transmitter_id: ir_tx
+            code: !lambda "return code;"
+            carrier_frequency: 38kHz
+
+ota:
+  - platform: esphome
+
+status_led:
+  pin:
+    number: GPIO2
+    ignore_strapping_warning: true   # the LED + 1k to GND keeps IO2 low at boot, which is what the ESP32 needs
+
+remote_transmitter:
+  id: ir_tx
+  pin: GPIO4                      # AO3400A gate, HIGH = IR LEDs on
+  carrier_duty_percent: 50%
+  non_blocking: true
+
+remote_receiver:
+  id: ir_rx
+  pin:
+    number: GPIO16                # TSOP38238 output
+    inverted: true
+  dump: all                       # every received frame is printed in the ESPHome logs ("learning")
+  tolerance: 25%
+  idle: 25ms                      # long enough for most A/C frames
+  # Publish the last decoded code to Home Assistant so you can copy it without reading logs
+  on_nec:
+    then:
+      - text_sensor.template.publish:
+          id: last_ir
+          state: !lambda 'char b[64]; snprintf(b, sizeof(b), "NEC address=0x%04X command=0x%04X", x.address, x.command); return std::string(b);'
+  on_samsung:
+    then:
+      - text_sensor.template.publish:
+          id: last_ir
+          state: !lambda 'char b[64]; snprintf(b, sizeof(b), "Samsung data=0x%08llX nbits=%u", (unsigned long long) x.data, x.nbits); return std::string(b);'
+  on_sony:
+    then:
+      - text_sensor.template.publish:
+          id: last_ir
+          state: !lambda 'char b[64]; snprintf(b, sizeof(b), "Sony data=0x%08lX nbits=%u", (unsigned long) x.data, x.nbits); return std::string(b);'
+  on_rc5:
+    then:
+      - text_sensor.template.publish:
+          id: last_ir
+          state: !lambda 'char b[64]; snprintf(b, sizeof(b), "RC5 address=0x%02X command=0x%02X", x.address, x.command); return std::string(b);'
+  on_lg:
+    then:
+      - text_sensor.template.publish:
+          id: last_ir
+          state: !lambda 'char b[64]; snprintf(b, sizeof(b), "LG data=0x%08lX nbits=%u", (unsigned long) x.data, x.nbits); return std::string(b);'
+  on_panasonic:
+    then:
+      - text_sensor.template.publish:
+          id: last_ir
+          state: !lambda 'char b[64]; snprintf(b, sizeof(b), "Panasonic address=0x%04X command=0x%08lX", x.address, (unsigned long) x.command); return std::string(b);'
+
+text_sensor:
+  - platform: template
+    id: last_ir
+    name: "Last IR code"
+    icon: mdi:remote
+  - platform: wifi_info
+    ip_address:
+      name: "IP address"
+      entity_category: diagnostic
+  - platform: version
+    name: "ESPHome version"
+
+binary_sensor:
+  - platform: gpio
+    name: "USER button"
+    pin:
+      number: GPIO13
+      inverted: true              # pressed = LOW; 10k pull-up is on the board
+    filters:
+      - delayed_on_off: 20ms
+  - platform: status
+    name: "Status"
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true                      # found I2C devices are listed in the boot log
+
+sensor:
+  - platform: wifi_signal
+    name: "Wi-Fi signal"
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: uptime
+    name: "Uptime"
+    entity_category: diagnostic
+
+button:
+  - platform: restart
+    name: "Restart"
+    entity_category: config

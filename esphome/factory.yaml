@@ -1,0 +1,22 @@
+# Factory image published on GitHub Releases (esp32-ir-blaster-esphome_*.factory.bin).
+# Contains no Wi-Fi credentials: on first boot the board opens the "ESP32 IR Blaster" hotspot (captive portal),
+# or you can set Wi-Fi over USB with Improv. Home Assistant then discovers it and offers "Adopt", which
+# creates your own config from esphome/esp32-ir-blaster.yaml with fresh keys.
+
+packages:
+  ir_blaster: !include esp32-ir-blaster.yaml
+
+esphome:
+  name_add_mac_suffix: true          # several boards on one network get unique names
+
+dashboard_import:
+  package_import_url: github://abhiramgcos/Esp_ir_board/esphome/esp32-ir-blaster.yaml@main
+  import_full_config: false
+
+wifi:
+  ap:
+    ssid: "ESP32 IR Blaster"
+
+captive_portal:
+
+improv_serial:
