@@ -79,16 +79,15 @@ These all fit the cheapest standard process at both fabs.
    * **Confirm parts placement:** Yes. They send you a placement preview to approve.
 3. **NEXT** → upload the **BOM** `fab/BOM_JLCPCB.csv` and the **CPL** `fab/CPL_JLCPCB.csv` → **Process BOM & CPL**.
 4. Bill of Materials page:
-   * Lines with an LCSC number match automatically. For lines without one, click **Search**, type the part,
-     and pick an in-stock match:
-     * the ESP32-WROOM-32E-N4,
-     * the PTC fuse (1206, 0.75 A hold),
-     * the 22 µF 1206 capacitors,
-     * the 0805 LEDs.
+   * **Every line has an LCSC number**, checked in stock on 2026-11-20, so the BOM matches automatically. If
+     a part has gone out of stock, click **Search** on that line and pick a substitute from
+     [COMPONENTS.md](COMPONENTS.md).
    * Prefer **Basic** parts. Each **Extended** part (the ESP32, CH340C and USB-C usually are) adds a one-time
      loading fee of about $3.
-   * Through-hole parts (buttons, headers, TSOP, IR LEDs) are **not** in the CPL. Untick them if they show up,
-     and solder them yourself (5 minutes). Paid through-hole assembly is possible but not worth it here.
+   * Through-hole parts are **not** in the CPL: the buttons, headers, TSOP and IR LEDs. Solder them yourself;
+     it takes about 10 minutes. The IR LEDs must be bent 90° to lie flat, which machine assembly doesn't do,
+     so they're best done by hand. See [COMPONENTS.md §3](COMPONENTS.md#3-what-to-buy-for-hand-assembly).
+     Order the TSOP38238 and TSAL6200 alongside the boards (LCSC C141632 and C55528), or locally.
    * See [COMPONENTS.md](COMPONENTS.md) for allowed substitutes if a part is out of stock.
 5. **NEXT** → Component Placements preview. **Check every part's rotation and pin 1.** Rotation offsets
    differ between libraries and JLC's database. Common ones to fix with the rotate button:

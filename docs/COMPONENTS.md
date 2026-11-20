@@ -1,6 +1,6 @@
 # Components: what each part does, what to buy, and safe alternatives
 
-**Board:** ESP32 IR Blaster/Receiver v2.1, 68 × 48 mm, 2 layers, 51 parts.
+**Board:** ESP32 IR Blaster/Receiver v2.1.1, 68 × 48 mm, 2 layers, 51 parts.
 
 The machine-readable BOM is in `fab/BOM_full.csv`; the JLCPCB-format BOM and pick-and-place files are in
 `fab/`. Values come from [`gen/circuit.py`](../gen/circuit.py), the single source of truth for the design.
@@ -15,38 +15,39 @@ SOT-23-5/6, SOIC-16 and the ESP32 module (castellated pads). Everything else is 
 
 | Ref | Qty | Part | Package | Job on this board | LCSC # |
 |---|---|---|---|---|---|
-| U1 | 1 | **ESP32-WROOM-32E-N4** | module | Wi-Fi MCU, 4 MB flash | add before ordering |
+| U1 | 1 | **ESP32-WROOM-32E-N4** | module | Wi-Fi MCU, 4 MB flash | C701341 |
 | U4 | 1 | **CH340C** | SOIC-16 | USB ↔ serial for flashing; internal clock (no crystal) | C84681 |
 | U2 | 1 | **AP2112K-3.3TRG1** | SOT-23-5 | 3.3 V LDO, 600 mA | C51118 |
 | U3 | 1 | **USBLC6-2SC6** | SOT-23-6 | ESD protection on USB D+/D− | C7519 |
-| U5 | 1 | **Vishay TSOP38238** | 3-pin THT | IR receiver, 38 kHz demodulator → IO16 | add before ordering |
+| U5 | 1 | **Vishay TSOP38238** | 3-pin THT | IR receiver, 38 kHz demodulator → IO16; dome faces out of the right edge | C141632 |
 | Q1, Q2 | 2 | **MMBT3904** | SOT-23 | DTR/RTS auto-reset into the bootloader | C20526 |
 | Q3 | 1 | **AO3400A** | SOT-23 | N-MOSFET low-side switch for the IR LEDs | C20917 |
 | D1, D2 | 2 | **SS14** | SMA | Schottky "OR" of USB 5 V and EXT 5 V (no back-feeding) | C2480 |
-| D3, D4 | 2 | **Vishay TSAL6200** | 5 mm THT | 940 nm IR LEDs in series, ~100 mA pulses | add before ordering |
-| D5 | 1 | LED green | 0805 | power indicator | any |
-| D6 | 1 | LED blue | 0805 | user LED on IO2 | any |
-| F1 | 1 | PTC fuse, 0.75 A hold, ≥6 V | 1206 | USB over-current protection | add before ordering |
+| D3, D4 | 2 | **Vishay TSAL6200** | 5 mm THT, **lying flat** | 940 nm IR LEDs in series, ~100 mA pulses; leads bent 90°, lenses point out of the right edge | C55528 |
+| D5 | 1 | LED green (KENTO KT-0805G) | 0805 | power indicator | C2297 |
+| D6 | 1 | LED blue (KENTO KT-0805B) | 0805 | user LED on IO2 | C2293 |
+| F1 | 1 | PTC fuse, 0.75 A hold, 8 V (PTTC SMD1206P075TFT) | 1206 | USB over-current protection | C545214 |
 | J1 | 1 | **HRO TYPE-C-31-M-12** | USB-C 16P SMD | power + programming | C165948 |
 | J2 | 1 | pin header 1×2, 2.54 mm | THT | external 5 V input | – |
 | J3 | 1 | pin header 1×6, 2.54 mm | THT | UART: GND TX RX EN IO0 3V3 | – |
 | J4 | 1 | pin header 1×14, 2.54 mm | THT | expansion: VIN 3V3 GND SDA SCL 18 19 23 25 26 32 33 34 35 | – |
 | SW1–SW3 | 3 | tactile switch 6×6 mm, H 5 mm | THT | RESET (EN), BOOT (IO0), USER (IO13) | – |
-| R10 | 1 | 18 Ω 1 % | **1206** | IR LED current: (4.5 V − 2×1.35 V) / 18 Ω ≈ 100 mA | – |
+| R10 | 1 | 18 Ω 1 % (Yageo RC1206FR-0718RL) | **1206** | IR LED current: (4.5 V − 2×1.35 V) / 18 Ω ≈ 100 mA | C137378 |
 | R1, R2 | 2 | 5.1 kΩ | 0805 | USB-C CC pull-downs (asks the charger for 5 V) | C27834 |
-| R3, R4, R6, R7, R14 | 5 | 10 kΩ | 0805 | EN/IO0/button pull-ups, transistor base resistors | – |
-| R5, R12, R13 | 3 | 1 kΩ | 0805 | CH340 TX series, LED resistors | – |
-| R8, R11 | 2 | 100 Ω | 0805 | MOSFET gate resistor, TSOP supply filter | – |
-| R9 | 1 | 100 kΩ | 0805 | MOSFET gate pull-down (LEDs off during boot) | – |
-| R15, R16 | 2 | 4.7 kΩ | 0805 | I²C pull-ups | – |
-| C1, C5, C10 | 3 | 22 µF 16 V X5R | **1206** | bulk: VIN, 3V3 at the ESP32, IR LED reservoir | – |
-| C3, C11 | 2 | 10 µF 10 V+ X5R | 0805 | LDO output, TSOP supply filter | – |
-| C2, C7 | 2 | 1 µF 16 V | 0805 | LDO input, EN reset delay | – |
-| C6, C8 | 2 | 100 nF | 0805 | decoupling (ESP32, CH340) | – |
+| R3, R4, R6, R7, R14 | 5 | 10 kΩ | 0805 | EN/IO0/button pull-ups, transistor base resistors | C17414 |
+| R5, R12, R13 | 3 | 1 kΩ | 0805 | CH340 TX series, LED resistors | C17513 |
+| R8, R11 | 2 | 100 Ω | 0805 | MOSFET gate resistor, TSOP supply filter | C17408 |
+| R9 | 1 | 100 kΩ | 0805 | MOSFET gate pull-down (LEDs off during boot) | C149504 |
+| R15, R16 | 2 | 4.7 kΩ | 0805 | I²C pull-ups | C17673 |
+| C1, C5, C10 | 3 | 22 µF 25 V X5R (Samsung CL31A226KAHNNNE) | **1206** | bulk: VIN, 3V3 at the ESP32, IR LED reservoir | C12891 |
+| C3, C11 | 2 | 10 µF 25 V X5R | 0805 | LDO output, TSOP supply filter | C15850 |
+| C2, C7 | 2 | 1 µF 50 V X7R | 0805 | LDO input, EN reset delay | C28323 |
+| C6, C8 | 2 | 100 nF 50 V X7R | 0805 | decoupling (ESP32, CH340) | C49678 |
 | H1–H4 | 4 | M2 mounting holes | – | – | – |
 
-An "–" in the LCSC column means a generic part: JLCPCB's "basic" resistors and capacitors match by value
-and package.
+Every LCSC number was checked against JLCPCB's parts library on 2026-11-20, and all were in stock. Stock and
+Basic/Extended status change over time, so JLC's BOM tool has the final word. Parts with a "–" (headers,
+buttons) are generic through-hole parts you solder yourself.
 
 **Extra parts to buy:**
 * 2.54 mm female headers if you want plug-in modules on J4.
@@ -174,6 +175,12 @@ they're easy to lose.
 4. ESP32 module. Tack two opposite corners, check alignment, then do the rest. The ground pad underneath can
    be soldered through the vias from the back.
 5. Through-hole last: buttons, TSOP, IR LEDs, headers.
+   * **IR LEDs (D3, D4)** lie flat, lens pointing out of the right edge (footprint
+     `LED_D5.0mm_Horizontal_O1.27mm_Z3.0mm`). Bend both leads 90° about 3 mm from the LED body, so the lens
+     centre sits ~3 mm above the board and the body starts ~1.3 mm from the holes. The short leg (cathode,
+     flat side of the rim) goes in the **square pad**. The lens tip ends at the board edge.
+   * **TSOP38238 (U5)** stands upright with its dome facing out of the right edge, the same direction as the
+     LEDs. OUT goes in the square pad.
 
 **Before first power-up**, measure resistance:
 

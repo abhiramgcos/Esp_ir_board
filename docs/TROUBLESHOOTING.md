@@ -64,7 +64,7 @@ CH340 driver from WCH (wch-ic.com, "CH341SER").
 
 ```bash
 esptool.py --chip esp32 --port /dev/ttyUSB0 erase_flash          # optional: also wipes saved codes + Wi-Fi
-esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 write_flash 0x0 esp32_ir_blaster_v2.1.0_full.bin
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 write_flash 0x0 esp32_ir_blaster_v2.1.1_full.bin
 ```
 
 ## 4. Boot and runtime
@@ -73,7 +73,7 @@ Open the serial console at 115200: `pio device monitor`, or the Arduino Serial M
 prints:
 
 ```
-ESP32 IR Blaster firmware v2.1.0 (<build date>)
+ESP32 IR Blaster firmware v2.1.1 (<build date>)
 3 saved codes
 Wi-Fi: 192.168.1.42
 Web UI: http://irblaster.local  (http://192.168.1.42)

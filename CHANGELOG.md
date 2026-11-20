@@ -2,6 +2,20 @@
 
 Hardware and firmware share one version number. Hardware revisions are printed on the PCB silkscreen.
 
+## [2.1.1] - 2026-11-20
+
+### Hardware
+* **IR front:** the TSOP38238 now faces out of the right board edge instead of inward toward the USB-C side.
+  The two TSAL6200 LEDs lie flat (leads bent 90°, `LED_D5.0mm_Horizontal_O1.27mm_Z3.0mm` footprint) and point
+  the same way, so the receiver and transmitter share one edge.
+* Board re-routed; DRC and Gerber connectivity re-verified.
+* **JLCPCB assembly ready:** every SMD part now has an LCSC number, checked in stock. The ESP32 (C701341),
+  PTC fuse, 22 µF and 18 Ω 1206 parts and both LEDs were added. TSOP38238 (C141632) and TSAL6200 (C55528)
+  numbers were added to the full BOM.
+
+### Firmware
+* Version bumped to 2.1.1 to match the hardware; no functional change.
+
 ## [2.1.0] - 2026-11-20
 
 Same circuit and pin map as 2.0.0. Firmware, Gerbers and accessories are interchangeable between the two.
@@ -66,5 +80,6 @@ JLCPCB BOM/CPL files.
 Original board. Only fab files exist; they are kept in `v1/fab/`. The review is in
 [docs/v1-review.md](docs/v1-review.md).
 
+[2.1.1]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.1
 [2.1.0]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.0
 [2.0.0]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.0.0

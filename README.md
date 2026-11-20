@@ -11,13 +11,13 @@ box, fan, LED strip) and plays them back from your phone, a script or Home Assis
 
 ![ESP32 IR Blaster, 3D render](docs/img/v2.1_3d_top_iso.png)
 
-<sub>KiCad 3D render of the v2.1 board, not a photo. The USB-C model is a stand-in for the HRO part, and the
-real IR LEDs (TSAL6200) are clear, not red.</sub>
+<sub>KiCad 3D render of the v2.1.1 board, not a photo. The USB-C model is a stand-in for the HRO part.</sub>
 
 ## Features
 
 * **Strong IR output:** two 940 nm LEDs driven at ~100 mA through a MOSFET, ≈8–10 m line-of-sight range.
-* **On-board receiver:** a 38 kHz TSOP38238 for learning codes.
+* **On-board receiver:** a 38 kHz TSOP38238 for learning codes. The receiver and both IR LEDs face out of
+  the same board edge, so one side of the board points at your devices.
 * **One-click flashing:** USB-C with a CH340C USB-serial chip and auto-reset; no buttons, no adapter.
 * **Ready-to-use firmware:**
   * web UI, REST API, captive-portal Wi-Fi setup, OTA updates;
@@ -35,8 +35,8 @@ real IR LEDs (TSAL6200) are clear, not red.</sub>
 |---|---|
 | MCU | ESP32-WROOM-32E (4 MB flash, Wi-Fi + BT), PCB antenna overhanging the board edge |
 | Power | USB-C 5 V or EXT 5 V header → SS14 diode-OR → AP2112K-3.3 (600 mA) |
-| IR transmit | 2× Vishay TSAL6200 in series, 18 Ω, AO3400A low-side switch on IO4 |
-| IR receive | Vishay TSOP38238 (38 kHz) on IO16 |
+| IR transmit | 2× Vishay TSAL6200 in series, lying flat and pointing out of the right edge; 18 Ω, AO3400A low-side switch on IO4 |
+| IR receive | Vishay TSOP38238 (38 kHz) on IO16; dome faces the same edge as the LEDs |
 | USB-serial | CH340C, DTR/RTS auto-reset (2× MMBT3904) |
 | User I/O | RESET, BOOT and USER (IO13) buttons; green power LED; blue LED on IO2 |
 | Headers | J3 UART (6-pin), J4 expansion (14-pin), J2 EXT 5V |
@@ -45,6 +45,11 @@ real IR LEDs (TSAL6200) are clear, not red.</sub>
 | Top | Bottom |
 |---|---|
 | ![top](docs/img/v2.1_3d_top.png) | ![bottom](docs/img/v2.1_3d_bottom_iso.png) |
+
+![IR edge](docs/img/v2.1_3d_ir_edge.png)
+
+<sub>The IR edge: the TSOP38238 receiver and both TSAL6200 LEDs (lying flat, leads bent 90°) face out of the
+same side of the board.</sub>
 
 ### Copper layout
 
@@ -77,7 +82,7 @@ Regenerate with `make copper`.
 | 5. Use | Join `ESP32-IR-Setup`, pick your Wi-Fi, open `http://irblaster.local` | [firmware/README.md#using-it](firmware/README.md#using-it) |
 | Something wrong? | Power, USB, flashing, Wi-Fi and IR checks, step by step | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) |
 
-**Quickest flash:** download `esp32_ir_blaster_v2.1.0_full.bin` from
+**Quickest flash:** download `esp32_ir_blaster_v2.1.1_full.bin` from
 [Releases](https://github.com/abhiramgcos/Esp_ir_board/releases/latest). Open the
 [ESP Tool web flasher](https://espressif.github.io/esptool-js/) in Chrome, connect to the CH340 port, and
 program the file at address `0x0`.
@@ -183,10 +188,10 @@ The remaining DRC **warnings** are expected:
 
 ## Status
 
-* v2.1 hardware and firmware are complete and verified by the checks above. **No board has been
+* v2.1.1 hardware and firmware are complete and verified by the checks above. **No board has been
   manufactured yet**, so treat the first build as a prototype run.
-* LCSC numbers are missing for a few parts (ESP32, TSOP, TSAL6200, PTC fuse, LEDs). Pick them in JLCPCB's
-  BOM tool when ordering assembly.
+* Every SMD part has a verified, in-stock LCSC number, so JLCPCB's BOM tool matches the whole BOM
+  automatically. The through-hole parts (IR LEDs, TSOP, buttons, headers) are left for hand soldering.
 * Always check part rotations in the fab's placement preview.
 
 ## Documentation
