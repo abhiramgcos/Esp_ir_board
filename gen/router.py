@@ -65,6 +65,15 @@ class Router:
                         p = to_px(ToMM(pad.GetPosition().x), ToMM(pad.GetPosition().y)); r = 1.0 / G
                         dz.ellipse([p[0] - r, p[1] - r, p[0] + r, p[1] + r], fill=1)
         self.fine_zone = np.array(fz, dtype=bool)
+        # via drill must keep >= 0.25 mm hole-to-hole from every drilled hole, whatever its net
+        hz = Image.new('L', (NX, NY), 0); dh = ImageDraw.Draw(hz)
+        for fp in self.b.GetFootprints():
+            for pad in fp.Pads():
+                if pad.GetDrillSize().x > 0:
+                    p = to_px(ToMM(pad.GetPosition().x), ToMM(pad.GetPosition().y))
+                    r = (ToMM(max(pad.GetDrillSize().x, pad.GetDrillSize().y)) / 2 + 0.25 + VIA_DRILL / 2 + 0.03) / G
+                    dh.ellipse([p[0] - r, p[1] - r, p[0] + r, p[1] + r], fill=1)
+        self.hole_ok = ~np.array(hz, dtype=bool)
         self.tracks = {}   # net -> list of (layer_idx, [(x,y)...]) polylines in mm
         self.vias = {}     # net -> list of (x,y)
 
@@ -157,9 +166,9 @@ class Router:
             dist.append(ndimage.distance_transform_edt(~foreign) * G)
         # tight margin only right at the 0.5 mm-pitch USB-C pins; normal margin everywhere else
         free = [d >= w / 2 + CLR + 0.06 for d in dist]
-        if net in FINE or net in SPECIAL:
+        if net in FINE:      # VBUS (SPECIAL) keeps the normal margin: it can exit its pad straight
             free = [f | ((d >= w / 2 + CLR + 0.025) & self.fine_zone) for f, d in zip(free, dist)]
-        via_ok = (dist[0] >= VIA_D / 2 + CLR + 0.06) & (dist[1] >= VIA_D / 2 + CLR + 0.06)
+        via_ok = (dist[0] >= VIA_D / 2 + CLR + 0.06) & (dist[1] >= VIA_D / 2 + CLR + 0.06) & self.hole_ok
         pads = self.pads[net]
         # pad cells (own copper) per layer
         tree = set()
