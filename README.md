@@ -11,7 +11,7 @@ box, fan, LED strip) and plays them back from your phone, a script or Home Assis
 
 ![ESP32 IR Blaster, 3D render](docs/img/v2.1_3d_top_iso.png)
 
-<sub>KiCad 3D render of the v2.1.3 board, not a photo. The USB-C model is a stand-in for the HRO part.</sub>
+<sub>KiCad 3D render of the v2.1.4 board, not a photo. The USB-C model is a stand-in for the HRO part.</sub>
 
 ## Features
 
@@ -46,8 +46,9 @@ box, fan, LED strip) and plays them back from your phone, a script or Home Assis
 |---|---|
 | ![top](docs/img/v2.1_3d_top.png) | ![bottom](docs/img/v2.1_3d_bottom.png) |
 
-<sub>The back carries a silkscreen portrait tribute: *"Inspired by the one and only T.K.V legend"*. Visit his
-site, [tkv.in.net](https://tkv.in.net).</sub>
+<sub>The back carries the credits: inspired by T.K.V ([github.com/tkv-04](https://github.com/tkv-04),
+[tkv.in.net](https://tkv.in.net)), designed by abhiramgcos ([github.com/abhiramgcos](https://github.com/abhiramgcos),
+[abhiramg.in](https://abhiramg.in)).</sub>
 
 ![IR edge](docs/img/v2.1_3d_ir_edge.png)
 
@@ -191,7 +192,7 @@ The remaining DRC **warnings** are expected:
 
 ## Status
 
-* v2.1.3 hardware and v2.1.1 firmware are complete and verified by the checks above. **No board has been
+* v2.1.4 hardware and v2.1.1 firmware are complete and verified by the checks above. **No board has been
   manufactured yet**, so treat the first build as a prototype run.
 * Every SMD part has a verified, in-stock LCSC number, so JLCPCB's BOM tool matches the whole BOM
   automatically. The through-hole parts (IR LEDs, TSOP, buttons, headers) are left for hand soldering.
@@ -208,6 +209,11 @@ The remaining DRC **warnings** are expected:
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Power, USB, flashing, boot, Wi-Fi and IR debugging |
 | [docs/BUILD_LOG.md](docs/BUILD_LOG.md) | How the board was designed, step by step, with images |
 | [CHANGELOG.md](CHANGELOG.md) | Version history (v1 → v2.0 → v2.1) |
+
+## Credits
+
+* Designed by **abhiramgcos**: [github.com/abhiramgcos](https://github.com/abhiramgcos) · [abhiramg.in](https://abhiramg.in)
+* Inspired by **T.K.V**: [github.com/tkv-04](https://github.com/tkv-04) · [tkv.in.net](https://tkv.in.net)
 
 ## License
 

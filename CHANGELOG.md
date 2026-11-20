@@ -2,6 +2,14 @@
 
 Hardware and firmware share one version number. Hardware revisions are printed on the PCB silkscreen.
 
+## [2.1.4] - 2026-11-20
+
+Silkscreen only; copper, drills, BOM and pick-and-place are unchanged from 2.1.3.
+
+* Back: the portrait is replaced by text credits: *Inspired by T.K.V* (github.com/tkv-04, tkv.in.net) and
+  *Designed by abhiramgcos* (github.com/abhiramgcos, abhiramg.in). The portrait art and tracing script were
+  removed from the repository.
+
 ## [2.1.3] - 2026-11-20
 
 * Buttons (SW1–SW3) and the pull-up/LED row below them moved 2 mm down, away from the ESP32. The gap from
@@ -100,6 +108,7 @@ JLCPCB BOM/CPL files.
 Original board. Only fab files exist; they are kept in `v1/fab/`. The review is in
 [docs/v1-review.md](docs/v1-review.md).
 
+[2.1.4]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.4
 [2.1.3]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.3
 [2.1.2]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.2
 [2.1.1]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.1
