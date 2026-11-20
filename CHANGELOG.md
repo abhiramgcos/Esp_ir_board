@@ -1,0 +1,70 @@
+# Changelog
+
+Hardware and firmware share one version number. Hardware revisions are printed on the PCB silkscreen.
+
+## [2.1.0] - 2026-11-20
+
+Same circuit and pin map as 2.0.0. Firmware, Gerbers and accessories are interchangeable between the two.
+
+### Hardware
+* Board shrunk from 76 × 56 mm to **68 × 48 mm** (−23 % area).
+* Router:
+  * 45° (octilinear) routing; power nets routed first; rip-up and retry.
+  * Total track 1733 → 1624 mm; vias 220 → 201.
+* USB-C:
+  * Dedicated fine-pitch clearance for D+/D−/CC (0.15 mm tracks).
+  * VBUS exits its pad straight, which fixes 4 clearance violations at J1.
+* ESP32 antenna: track, via and copper-pour keep-out on both layers, in addition to the edge overhang.
+* Vias keep ≥ 0.25 mm hole-to-hole from all drilled holes.
+* Silkscreen placed automatically from the outline and footprints: no silk on pads, no overlaps.
+* 3D models: real ESP32-WROOM-32E model; stand-in model for the USB-C receptacle.
+
+### Firmware (new)
+* Learn, store and send IR codes: decoded protocols, A/C state frames, raw timings.
+* Web UI, JSON REST API, serial console, USER-button actions.
+* Wi-Fi captive-portal setup, mDNS (`irblaster.local`), OTA updates.
+* Arduino IDE sketch and PlatformIO project from the same sources.
+
+### ESPHome / Home Assistant (new)
+* `esphome/esp32-ir-blaster.yaml` board package: IR TX/RX, button, LED, I²C, diagnostics, and send actions
+  (NEC, Samsung, Sony, Pronto, raw).
+* `example.yaml` user config with learnable buttons and an optional A/C climate entity.
+* Prebuilt factory image with captive portal, Improv and Home Assistant adoption.
+
+### Tooling
+* Generators ported to KiCad 9 (still run on KiCad 7).
+* `silk.py` re-runs are idempotent; `scripts/silk_preview.sh` added.
+* Official renders via `kicad-cli pcb render`.
+
+### Verification
+* KiCad DRC: 0 errors, 0 unconnected.
+* Gerber connectivity: 41 nets, 0 shorts, 0 opens, 162/162 pins.
+* Firmware builds clean (1.08 MB flash, 50.8 kB RAM).
+* Not yet built or run on physical hardware.
+
+## [2.0.0] - 2026-11-19
+
+Full redesign. Every issue from the [v1 review](docs/v1-review.md) is fixed:
+
+| v1 problem | 2.0.0 |
+|---|---|
+| LD1117 needs ~1.2 V headroom; it browns out after the input diode | **AP2112K-3.3** (0.25 V dropout) |
+| 100 nF on the regulator input only | 22 µF + 1 µF on VIN; 10 µF + 22 µF + 100 nF on 3V3 |
+| IR LED ≈20 mA from 3.3 V (short range) | **2 LEDs in series from VIN at ≈100 mA**, MOSFET switched |
+| IR receiver missing from the BOM | **TSOP38238 on board** |
+| Needs an external USB-UART adapter | **CH340C + auto-reset**: one-click flashing |
+| No protection | USB ESD diode, resettable fuse, diode-OR of USB and EXT 5V |
+| Mounting holes in the BOM, one part on the bottom, 0.2 mm vias | Holes excluded, all parts on top, 0.3 mm vias |
+| No part numbers, no revision | MPN + LCSC columns, revision on silkscreen |
+| No I²C pull-ups | 4.7 k on SDA/SCL |
+
+Also new: a hand-solder-friendly footprint set, a GPIO map and passives table on the back silkscreen, and
+JLCPCB BOM/CPL files.
+
+## [1.0.0]
+
+Original board. Only fab files exist; they are kept in `v1/fab/`. The review is in
+[docs/v1-review.md](docs/v1-review.md).
+
+[2.1.0]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.1.0
+[2.0.0]: https://github.com/abhiramgcos/Esp_ir_board/releases/tag/v2.0.0

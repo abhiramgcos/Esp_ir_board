@@ -159,8 +159,7 @@ So the copper that gets manufactured matches the schematic, pin for pin.
 
 ## Step 6: v2.1 optimisation, KiCad 9, 3D renders, firmware and guides
 
-Same circuit as v2.0. The layout, tooling and documentation were reworked. Done on the local machine
-(Ubuntu 26.04, KiCad 9.0.8) after the hand-off from the cloud session.
+Same circuit as v2.0; layout, tooling and documentation reworked. Built on Ubuntu 26.04 with KiCad 9.0.8.
 
 ### 6a. Toolchain on KiCad 9
 * `pcb.py`: `FOOTPRINT.SetProperty` was removed in KiCad 8, so MPN/LCSC are now hidden `PCB_FIELD`s.

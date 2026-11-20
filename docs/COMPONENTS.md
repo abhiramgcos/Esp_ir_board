@@ -8,8 +8,8 @@ The machine-readable BOM is in `fab/BOM_full.csv`; the JLCPCB-format BOM and pic
 **Hand-solder friendly.** All passives are 0805 or 1206 with the long `_HandSolder` pads. The ICs are SOT-23,
 SOT-23-5/6, SOIC-16 and the ESP32 module (castellated pads). Everything else is through-hole.
 
-> "Alternative" here means **drop-in**: same footprint and pinout, so no PCB change. Anything that needs a
-> different footprint is marked ⚠️.
+> "Alternative" means **drop-in**: same footprint and pinout, no PCB change. Parts that look similar but
+> do **not** fit are listed too, marked *no*.
 
 ## 1. Bill of materials
 
@@ -59,19 +59,19 @@ and package.
 
 | Option | Notes |
 |---|---|
-| ESP32-WROOM-32E-N4 | ✅ Default. 4 MB flash, PCB antenna, rev 3 silicon. |
-| ESP32-WROOM-32E-N8 / -N16 | ✅ Drop-in, more flash. |
-| ESP32-WROOM-32D / ESP32-WROOM-32 | ✅ Drop-in (older silicon; works with this firmware). |
-| ESP32-WROOM-32UE | ✅ Drop-in, but U.FL connector for an external antenna. Good inside a metal box. |
-| ESP32-C3 / S3 / C6 modules | ⚠️ Different pinout and footprint. Not compatible. |
+| ESP32-WROOM-32E-N4 | Default. 4 MB flash, PCB antenna, rev 3 silicon. |
+| ESP32-WROOM-32E-N8 / -N16 | Drop-in, more flash. |
+| ESP32-WROOM-32D / ESP32-WROOM-32 | Drop-in (older silicon; works with this firmware). |
+| ESP32-WROOM-32UE | Drop-in, but U.FL connector for an external antenna. Good inside a metal box. |
+| ESP32-C3 / S3 / C6 modules | *No*: different pinout and footprint. |
 
 ### USB-serial (U4)
 
 | Option | Notes |
 |---|---|
-| CH340C | ✅ Default. Built-in oscillator. |
-| CH340G | ⚠️ Same SOIC-16 but **needs a 12 MHz crystal** on pins 7/8. Will not work as-is. |
-| CH340K, CP2102N, FT231X | ⚠️ Different packages and pinouts. |
+| CH340C | Default. Built-in oscillator. |
+| CH340G | *No*: same SOIC-16, but **needs a 12 MHz crystal** on pins 7/8. |
+| CH340K, CP2102N, FT231X | *No*: different packages and pinouts. |
 
 Linux and macOS have CH340 drivers built in. On Windows 10/11 the driver installs automatically or from
 wch-ic.com.
@@ -82,11 +82,11 @@ All of these use the same SOT-23-5 pinout as AP2112K: 1 VIN, 2 GND, 3 EN, 4 NC, 
 
 | Option | Notes |
 |---|---|
-| AP2112K-3.3 (600 mA) | ✅ Default. |
-| ME6211C33M5G (500 mA) | ✅ Cheap and common at LCSC. |
-| XC6220B331MR (700 mA) | ✅ |
-| RT9013-33**GB** (500 mA) | ✅ The **GB** suffix has pin 4 NC. The PB version has a bypass pin, which is also OK. |
-| AMS1117-3.3 | ⚠️ SOT-223 package and about 1.1 V dropout. Not suitable here (VIN is only ~4.5 V). |
+| AP2112K-3.3 (600 mA) | Default. |
+| ME6211C33M5G (500 mA) | Cheap and common at LCSC. |
+| XC6220B331MR (700 mA) | |
+| RT9013-33**GB** (500 mA) | The **GB** suffix has pin 4 NC. The PB version has a bypass pin, which is also OK. |
+| AMS1117-3.3 | *No*: SOT-223 package, ~1.1 V dropout is too much from a 4.5 V VIN. |
 
 ESP32 Wi-Fi bursts draw about 350–500 mA, so don't use regulators under 500 mA (e.g. MCP1700, HT7333).
 
@@ -105,11 +105,11 @@ This loses ESD protection. Not recommended for a board you'll plug in often.
 
 | Option | Notes |
 |---|---|
-| TSAL6200 (940 nm, ±17°, 100 mA) | ✅ Default. Good range and spread. |
-| TSAL6100 (±10°) | ✅ Longer range, narrower beam. |
-| TSAL6400 (±25°) | ✅ Wider beam, slightly less range. |
-| Any 5 mm **940 nm** IR LED rated ≥100 mA, Vf ≈1.2–1.5 V | ✅ e.g. generic "IR333" types. |
-| 850 nm LEDs | ⚠️ Many TV/AC receivers are far less sensitive at 850 nm. Avoid. |
+| TSAL6200 (940 nm, ±17°, 100 mA) | Default. Good range and spread. |
+| TSAL6100 (±10°) | Longer range, narrower beam. |
+| TSAL6400 (±25°) | Wider beam, slightly less range. |
+| Any 5 mm **940 nm** IR LED rated ≥100 mA, Vf ≈1.2–1.5 V | e.g. generic "IR333" types. |
+| 850 nm LEDs | *No*: most TV/AC receivers are far less sensitive at 850 nm. |
 
 **Polarity:** the longer leg is the anode (+). The flat side of the rim is the cathode, which matches the
 square pad on the PCB.
@@ -118,28 +118,28 @@ square pad on the PCB.
 
 | Option | Notes |
 |---|---|
-| TSOP38238 | ✅ Default. Pinout 1 OUT, 2 GND, 3 VS, matching the footprint. |
-| TSOP4838 | ✅ Same pinout, older series. |
-| TSOP38438 | ✅ Same pinout, AGC4: better for A/C remotes with long frames. |
-| VS1838B / HX1838 | ✅ Same OUT-GND-VCC order and very cheap; shorter range and more noise. |
-| TSOP38236 / 38240 / 38256 | ✅ Use when your remotes are 36, 40 or 56 kHz. |
-| TSOP1838, KY-022 modules, some no-name parts | ⚠️ Check the datasheet pin order; several have VS and GND swapped. |
+| TSOP38238 | Default. Pinout 1 OUT, 2 GND, 3 VS, matching the footprint. |
+| TSOP4838 | Same pinout, older series. |
+| TSOP38438 | Same pinout, AGC4: better for A/C remotes with long frames. |
+| VS1838B / HX1838 | Same OUT-GND-VCC order and very cheap; shorter range and more noise. |
+| TSOP38236 / 38240 / 38256 | Use when your remotes are 36, 40 or 56 kHz. |
+| TSOP1838, KY-022 modules, some no-name parts | *Check first*: several have VS and GND swapped. |
 
 ### Transistors
 
 | Part | Options |
 |---|---|
-| Q1, Q2 (NPN) | ✅ MMBT3904 (default), MMBT2222A, S8050 (J3Y), BC847. All SOT-23 with 1 B, 2 E, 3 C. |
-| Q3 (N-MOSFET, logic level at 3.3 V gate) | ✅ AO3400A (default), AO3402, SI2302CDS, IRLML6344, IRLML2502. All SOT-23 with 1 G, 2 S, 3 D. |
+| Q1, Q2 (NPN) | MMBT3904 (default), MMBT2222A, S8050 (J3Y), BC847. All SOT-23 with 1 B, 2 E, 3 C. |
+| Q3 (N-MOSFET, logic level at 3.3 V gate) | AO3400A (default), AO3402, SI2302CDS, IRLML6344, IRLML2502. All SOT-23 with 1 G, 2 S, 3 D. |
 
-⚠️ For Q3, avoid 2N7002: its R<sub>DS(on)</sub> at 3.3 V is too high for 100 mA pulses.
+Avoid 2N7002 for Q3: its R<sub>DS(on)</sub> at 3.3 V gate drive is too high for 100 mA pulses.
 
 ### Diodes and fuse
 
 | Part | Options |
 |---|---|
-| D1, D2 | ✅ SS14 (default), SS16, SS24, SS34, B140, MBRA140. All SMA Schottky, ≥1 A. ⚠️ Not SOD-123 (e.g. 1N5819W). |
-| F1 | ✅ Any 1206 PTC with 0.5–1.1 A hold and ≥6 V, e.g. Bourns MF-NSMF075, Littelfuse 1206L075. In a pinch, a 0 Ω 1206 jumper works (no over-current protection). |
+| D1, D2 | SS14 (default), SS16, SS24, SS34, B140, MBRA140. All SMA Schottky, ≥1 A. SOD-123 parts (e.g. 1N5819W) do not fit. |
+| F1 | Any 1206 PTC with 0.5–1.1 A hold and ≥6 V, e.g. Bourns MF-NSMF075, Littelfuse 1206L075. In a pinch, a 0 Ω 1206 jumper works (no over-current protection). |
 
 ### Passives, LEDs, buttons, headers
 
