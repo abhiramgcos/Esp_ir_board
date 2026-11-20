@@ -42,9 +42,7 @@ box, fan, LED strip) and plays them back from your phone, a script or Home Assis
 | Headers | J3 UART (6-pin), J4 expansion (14-pin), J2 EXT 5V |
 | PCB | 68 × 48 mm, 2 layers, 1.6 mm, 4× M2 holes, JLCPCB/PCBWay standard process |
 
-| Top | Bottom |
-|---|---|
-| ![top](docs/img/v2.1_3d_top.png) | ![bottom](docs/img/v2.1_3d_bottom.png) |
+![Top and bottom](docs/img/v2.1_3d_top_bottom.png)
 
 <sub>The back carries the credits: inspired by T.K.V ([github.com/tkv-04](https://github.com/tkv-04),
 [tkv.in.net](https://tkv.in.net)), designed by abhiramgcos ([github.com/abhiramgcos](https://github.com/abhiramgcos),
