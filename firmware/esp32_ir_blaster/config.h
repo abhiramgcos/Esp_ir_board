@@ -2,7 +2,7 @@
 // Pin map of the ESP32 IR board (v2.0 / v2.1). Matches gen/circuit.py and the GPIO map on the PCB back.
 #pragma once
 
-#define FW_VERSION "2.1.0"
+#define FW_VERSION "2.1.1"
 
 constexpr uint8_t PIN_IR_TX   = 4;    // -> 100R -> AO3400A gate; HIGH = IR LEDs on (2x TSAL6200, ~100 mA)
 constexpr uint8_t PIN_IR_RX   = 16;   // TSOP38238 output, active LOW, 38 kHz demodulated

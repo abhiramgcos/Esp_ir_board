@@ -19,7 +19,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: abhiramgcos.esp32-ir-blaster
-    version: "2.1.0"
+    version: "2.1.1"
 
 esp32:
   board: esp32dev

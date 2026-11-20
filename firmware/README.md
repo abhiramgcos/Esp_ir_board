@@ -41,7 +41,7 @@ and flash.
 
 ### Option 1: prebuilt binary, from the browser (no install)
 
-1. Download `esp32_ir_blaster_v2.1.0_full.bin` from the
+1. Download `esp32_ir_blaster_v2.1.1_full.bin` from the
    [latest release](https://github.com/abhiramgcos/Esp_ir_board/releases/latest).
 2. Open the **[ESP Tool web flasher](https://espressif.github.io/esptool-js/)** in Chrome or Edge.
    (Web Serial doesn't work in Firefox or Safari.)
@@ -53,7 +53,7 @@ Command-line equivalent:
 
 ```bash
 pip install esptool
-esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 write_flash 0x0 esp32_ir_blaster_v2.1.0_full.bin
+esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 write_flash 0x0 esp32_ir_blaster_v2.1.1_full.bin
 ```
 
 On Windows the port is `COM3` or similar; on macOS it is `/dev/cu.wchusbserial*`.

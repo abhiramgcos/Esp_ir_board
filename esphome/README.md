@@ -23,7 +23,7 @@ replaces the other.
 
 ## Option A: flash the prebuilt image and adopt it (easiest)
 
-1. Download `esp32-ir-blaster-esphome_v2.1.0.factory.bin` from the
+1. Download `esp32-ir-blaster-esphome_v2.1.1.factory.bin` from the
    [latest release](https://github.com/abhiramgcos/Esp_ir_board/releases/latest).
 2. Open **<https://web.esphome.io>** in Chrome or Edge.
 3. Plug the board in over USB-C, click **Connect**, and choose the CH340 port.
@@ -131,7 +131,7 @@ Home Assistant. With `receiver_id: ir_rx` set, using the original remote keeps t
 * **Pins** are fixed by the PCB; the package already sets them. Only change them if you modify the hardware.
 * **Range and aiming** are the same as with the stand-alone firmware: about 8–10 m line of sight, and the
   LEDs can be bent toward the target.
-* **Switching back** to the stand-alone firmware: flash `esp32_ir_blaster_v2.1.0_full.bin` (see
+* **Switching back** to the stand-alone firmware: flash `esp32_ir_blaster_v2.1.1_full.bin` (see
   [firmware/README.md](../firmware/README.md)). ESPHome and the stand-alone firmware store codes
   differently, so codes are not carried over.
 * **Troubleshooting:**
