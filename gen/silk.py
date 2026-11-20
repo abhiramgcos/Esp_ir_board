@@ -7,9 +7,9 @@ from circuit import comps
 from placement import BOARD, PLACE
 BX0, BY0, BX1, BY1, _ = BOARD
 UX = PLACE['U1'][0]                      # antenna strip = U1 x +-11 mm along the top edge
-REV = 'v2.1'
+REV = 'v2.1.1'
 # reference offsets (mm from footprint origin) for crowded parts, checked with kicad-cli DRC
-REF_AT = {'R3': (-3.3, 1.0), 'C7': (-3.3, 0.5), 'D6': (2.9, 0.0), 'U5': (0.0, -4.6)}
+REF_AT = {'R3': (-3.3, 1.0), 'C7': (-3.3, 0.5), 'D6': (2.9, 0.0)}
 
 PCB = sys.argv[1]
 b = pcbnew.LoadBoard(PCB)

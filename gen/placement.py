@@ -1,7 +1,7 @@
 """Footprint placement (KiCad mm, y down). ref: (x, y, rotation_deg, side).
 
 v2.1 compact layout: 68 x 48 mm (was 76 x 56, -23 % area).
-  top-left  : power (EXT 5V, diode-OR, fuse, LDO)     top-right : IR transmit (2x TSAL6200)
+  top-left  : power (EXT 5V, diode-OR, fuse, LDO)     top-right : IR transmit (2x TSAL6200, lying flat, facing out of the right edge)
   mid-left  : USB-C + ESD, CH340C, auto-reset          mid-right : IR receive (TSOP38238)
   centre    : ESP32 (antenna overhangs top edge), buttons row, pull-ups / user LED row
   bottom    : UART header J3 + 14-pin expansion J4 along the edge
@@ -37,10 +37,11 @@ PLACE = {
     'J4': (124.5, 145.0, 90, 'F'),
     # IR transmit
     'R10': (152.0, 103.5, 0, 'F'), 'C10': (152.0, 107.5, 0, 'F'),
-    'D3': (157.5, 108.8, 0, 'F'), 'D4': (157.5, 117.0, 0, 'F'),
+    # IR LEDs lie flat (leads bent 90 deg), lenses point out of the right edge
+    'D3': (157.5, 111.0, 90, 'F'), 'D4': (157.5, 119.5, 90, 'F'),
     'Q3': (152.5, 113.0, 0, 'F'), 'R8': (152.5, 117.0, 0, 'F'), 'R9': (152.5, 119.5, 0, 'F'),
-    # IR receive (body toward board centre, pins near right edge)
-    'U5': (166.0, 126.0, 270, 'F'), 'R11': (160.0, 124.0, 90, 'F'), 'C11': (160.0, 129.0, 90, 'F'),
+    # IR receive: dome faces out of the right edge, same direction as the IR LEDs
+    'U5': (163.5, 130.0, 90, 'F'), 'R11': (160.0, 124.0, 90, 'F'), 'C11': (160.0, 129.0, 90, 'F'),
 }
 
 NETCLASS_POWER = ['GND', 'VBUS', 'VBUS_F', 'VIN', 'EXT5V', '+3V3', 'IR_A', 'IR_MID', 'IR_K']

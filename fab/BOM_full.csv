@@ -2,30 +2,30 @@ Qty,Designators,Value,Footprint,MPN / description,LCSC,Assembly
 1,J1,USB-C,USB_C_Receptacle_HRO_TYPE-C-31-M-12,HRO TYPE-C-31-M-12,C165948,SMT or hand
 2,"R1,R2",5.1k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,,C27834,SMT or hand
 1,U3,USBLC6-2SC6,SOT-23-6,USBLC6-2SC6,C7519,SMT or hand
-1,F1,0.75A hold,Fuse_1206_3216Metric_Pad1.42x1.75mm_HandSolder,"1206 PTC resettable fuse, 0.75 A hold, 6 V+",,SMT or hand
+1,F1,0.75A hold,Fuse_1206_3216Metric_Pad1.42x1.75mm_HandSolder,"PTTC SMD1206P075TFT (0.75 A hold, 8 V)",C545214,SMT or hand
 2,"D1,D2",SS14,D_SMA_Handsoldering,SS14,C2480,SMT or hand
 1,J2,EXT 5V,PinHeader_1x02_P2.54mm_Vertical,2.54 mm header 1x2,,hand (THT)
-3,"C1,C5,C10",22uF,C_1206_3216Metric_Pad1.33x1.80mm_HandSolder,22uF 16V X5R 1206,,SMT or hand
+3,"C1,C5,C10",22uF,C_1206_3216Metric_Pad1.33x1.80mm_HandSolder,22uF 16V X5R 1206,C12891,SMT or hand
 2,"C2,C7",1uF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,,C28323,SMT or hand
 1,U2,AP2112K-3.3,SOT-23-5,AP2112K-3.3TRG1,C51118,SMT or hand
 2,"C3,C11",10uF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,,C15850,SMT or hand
-1,D5,GREEN,LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder,0805 green LED,,SMT or hand
+1,D5,GREEN,LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder,KENTO KT-0805G,C2297,SMT or hand
 3,"R5,R12,R13",1k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,,C17513,SMT or hand
 1,U4,CH340C,SOIC-16_3.9x9.9mm_P1.27mm,CH340C,C84681,SMT or hand
 2,"C6,C8",100nF,C_0805_2012Metric_Pad1.18x1.45mm_HandSolder,,C49678,SMT or hand
 2,"Q1,Q2",MMBT3904,SOT-23,MMBT3904,C20526,SMT or hand
 5,"R3,R4,R6,R7,R14",10k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,,C17414,SMT or hand
-1,U1,ESP32-WROOM-32E,ESP32-WROOM-32D,ESP32-WROOM-32E-N4,,SMT or hand
+1,U1,ESP32-WROOM-32E,ESP32-WROOM-32D,ESP32-WROOM-32E-N4,C701341,SMT or hand
 1,SW1,RESET,SW_PUSH_6mm_H5mm,6x6 mm tactile THT,,hand (THT)
 1,SW2,BOOT,SW_PUSH_6mm_H5mm,6x6 mm tactile THT,,hand (THT)
 1,J3,UART,PinHeader_1x06_P2.54mm_Vertical,2.54 mm header 1x6,,hand (THT)
 1,Q3,AO3400A,SOT-23,AO3400A,C20917,SMT or hand
 2,"R8,R11",100R,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,,C17408,SMT or hand
 1,R9,100k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,,C149504,SMT or hand
-1,R10,18R,R_1206_3216Metric_Pad1.30x1.75mm_HandSolder,18 ohm 1206 1%,,SMT or hand
-2,"D3,D4",TSAL6200,LED_D5.0mm,Vishay TSAL6200,,hand (THT)
-1,U5,TSOP38238,Vishay_MOLD-3Pin,Vishay TSOP38238,,hand (THT)
-1,D6,BLUE,LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder,0805 blue LED,,SMT or hand
+1,R10,18R,R_1206_3216Metric_Pad1.30x1.75mm_HandSolder,18 ohm 1206 1%,C137378,SMT or hand
+2,"D3,D4",TSAL6200,LED_D5.0mm_Horizontal_O1.27mm_Z3.0mm_Clear,Vishay TSAL6200,C55528,hand (THT)
+1,U5,TSOP38238,Vishay_MOLD-3Pin,Vishay TSOP38238,C141632,hand (THT)
+1,D6,BLUE,LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder,KENTO KT-0805B,C2293,SMT or hand
 1,SW3,USER,SW_PUSH_6mm_H5mm,6x6 mm tactile THT,,hand (THT)
 2,"R15,R16",4.7k,R_0805_2012Metric_Pad1.20x1.40mm_HandSolder,,C17673,SMT or hand
 1,J4,EXPANSION,PinHeader_1x14_P2.54mm_Vertical,2.54 mm header 1x14,,hand (THT)

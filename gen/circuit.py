@@ -8,6 +8,8 @@ R1206 = 'Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder'
 C805 = 'Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder'
 C1206 = 'Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder'
 LED805 = 'LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder'
+# IR LEDs lie flat, leads bent 90 deg, lens pointing out of the board edge (same direction as the TSOP)
+IRLED = 'LED_THT:LED_D5.0mm_Horizontal_O1.27mm_Z3.0mm_Clear'
 SOT23 = 'Package_TO_SOT_SMD:SOT-23'
 HDR = 'Connector_PinHeader_2.54mm:PinHeader_1x{:02d}_P2.54mm_Vertical'
 BTN = 'Button_Switch_THT:SW_PUSH_6mm_H5mm'
@@ -16,6 +18,8 @@ BTN = 'Button_Switch_THT:SW_PUSH_6mm_H5mm'
 LCSC = {
     '10k': 'C17414', '5.1k': 'C27834', '1k': 'C17513', '100R': 'C17408', '4.7k': 'C17673',
     '100k': 'C149504', '100nF': 'C49678', '10uF': 'C15850', '1uF': 'C28323',
+    '22uF': 'C12891',   # 22uF 25V X5R 1206 (Samsung CL31A226KAHNNNE)
+    '18R': 'C137378',   # 18R 1% 1206 (Yageo RC1206FR-0718RL)
 }
 
 comps = []
@@ -49,7 +53,7 @@ add('U3', 'Power_Protection:USBLC6-2SC6', 'USBLC6-2SC6', 'Package_TO_SOT_SMD:SOT
     {'1': 'USB_DP', '6': 'USB_DP', '3': 'USB_DN', '4': 'USB_DN', '2': 'GND', '5': 'VBUS'},
     (45, 135), mpn='USBLC6-2SC6', lcsc='C7519')
 add('F1', 'Device:Polyfuse', '0.75A hold', 'Fuse:Fuse_1206_3216Metric_Pad1.42x1.75mm_HandSolder',
-    {'1': 'VBUS', '2': 'VBUS_F'}, (115, 45), mpn='1206 PTC resettable fuse, 0.75 A hold, 6 V+')
+    {'1': 'VBUS', '2': 'VBUS_F'}, (115, 45), mpn='PTTC SMD1206P075TFT (0.75 A hold, 8 V)', lcsc='C545214')
 add('D1', 'Device:D_Schottky', 'SS14', 'Diode_SMD:D_SMA_Handsoldering',
     {'1': 'VIN', '2': 'VBUS_F'}, (135, 45), rot=0, mpn='SS14', lcsc='C2480')
 add('D2', 'Device:D_Schottky', 'SS14', 'Diode_SMD:D_SMA_Handsoldering',
@@ -63,7 +67,7 @@ add('U2', 'Regulator_Linear:AP2112K-3.3', 'AP2112K-3.3', 'Package_TO_SOT_SMD:SOT
     mpn='AP2112K-3.3TRG1', lcsc='C51118')
 C('C3', '10uF', '+3V3', 'GND', (210, 50))
 add('D5', 'Device:LED', 'GREEN', LED805, {'2': '+3V3_LED', '1': 'GND'}, (232, 60), rot=0,
-    mpn='0805 green LED', desc='Power LED')
+    mpn='KENTO KT-0805G', lcsc='C2297', desc='Power LED')
 R('R12', '1k', '+3V3', '+3V3_LED', (232, 45))
 
 # ---------------------------------------------------------------- USB-UART + auto program
@@ -86,7 +90,7 @@ esp = {'1': 'GND', '15': 'GND', '38': 'GND', '39': 'GND', '2': '+3V3', '3': 'EN'
        '16': 'BTN_USER', '33': 'SDA', '36': 'SCL', '30': 'IO18', '31': 'IO19', '37': 'IO23',
        '10': 'IO25', '11': 'IO26', '8': 'IO32', '9': 'IO33', '6': 'IO34', '7': 'IO35'}
 add('U1', 'RF_Module:ESP32-WROOM-32E', 'ESP32-WROOM-32E', 'RF_Module:ESP32-WROOM-32D', esp,
-    (215, 160), mpn='ESP32-WROOM-32E-N4')
+    (215, 160), mpn='ESP32-WROOM-32E-N4', lcsc='C701341')
 C('C5', '22uF', '+3V3', 'GND', (175, 120), fp=C1206, mpn='22uF 16V X5R 1206')
 C('C6', '100nF', '+3V3', 'GND', (187, 120))
 R('R3', '10k', '+3V3', 'EN', (165, 160))
@@ -104,22 +108,22 @@ add('Q3', 'Transistor_FET:AO3400A', 'AO3400A', SOT23,
 R('R8', '100R', 'IR_TX', 'IR_G', (295, 95))
 R('R9', '100k', 'IR_G', 'GND', (305, 110))
 R('R10', '18R', 'VIN', 'IR_A', (325, 40), fp=R1206, mpn='18 ohm 1206 1%', desc='~100 mA LED current')
-add('D3', 'Device:LED', 'TSAL6200', 'LED_THT:LED_D5.0mm', {'2': 'IR_A', '1': 'IR_MID'}, (325, 55),
-    rot=0, mpn='Vishay TSAL6200')
-add('D4', 'Device:LED', 'TSAL6200', 'LED_THT:LED_D5.0mm', {'2': 'IR_MID', '1': 'IR_K'}, (325, 72),
-    rot=0, mpn='Vishay TSAL6200')
+add('D3', 'Device:LED', 'TSAL6200', IRLED, {'2': 'IR_A', '1': 'IR_MID'}, (325, 55),
+    rot=0, mpn='Vishay TSAL6200', lcsc='C55528')
+add('D4', 'Device:LED', 'TSAL6200', IRLED, {'2': 'IR_MID', '1': 'IR_K'}, (325, 72),
+    rot=0, mpn='Vishay TSAL6200', lcsc='C55528')
 C('C10', '22uF', 'VIN', 'GND', (345, 45), fp=C1206, mpn='22uF 16V X5R 1206')
 
 # ---------------------------------------------------------------- IR receive
 add('U5', 'Interface_Optical:TSOP382xx', 'TSOP38238', 'OptoDevice:Vishay_MOLD-3Pin',
-    {'1': 'IR_RX', '2': 'GND', '3': 'IR_VS'}, (320, 150), mpn='Vishay TSOP38238')
+    {'1': 'IR_RX', '2': 'GND', '3': 'IR_VS'}, (320, 150), mpn='Vishay TSOP38238', lcsc='C141632')
 R('R11', '100R', '+3V3', 'IR_VS', (290, 140))
 C('C11', '10uF', 'IR_VS', 'GND', (300, 160))
 
 # ---------------------------------------------------------------- user I/O
 R('R13', '1k', 'LED_USER', 'LED_USER_A', (285, 200))
 add('D6', 'Device:LED', 'BLUE', LED805, {'2': 'LED_USER_A', '1': 'GND'}, (285, 215), rot=0,
-    mpn='0805 blue LED', desc='User LED on IO2')
+    mpn='KENTO KT-0805B', lcsc='C2293', desc='User LED on IO2')
 R('R14', '10k', '+3V3', 'BTN_USER', (305, 200))
 add('SW3', 'Switch:SW_Push', 'USER', BTN, {'1': 'BTN_USER', '2': 'GND'}, (320, 215), mpn='6x6 mm tactile THT')
 R('R15', '4.7k', '+3V3', 'SDA', (345, 200))
